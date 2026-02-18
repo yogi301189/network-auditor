@@ -59,12 +59,9 @@ jobs:
 
       # ── Step 5: Run the audit ─────────────────────────────────────────────
       - name: Run Network Auditor
-        working-directory: ${{ github.workspace }}
         run: |
-          echo "Working directory: $(pwd)"
-          echo "Files present:"
-          ls -la
-          python -m auditor.main
+          export PYTHONPATH="${{ github.workspace }}"
+          python3 -m auditor.main
 
       # ── Step 6: Save the report as a build artifact ───────────────────────
       # GitHub keeps this file for 30 days. You can download it from the
