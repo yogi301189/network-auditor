@@ -59,9 +59,7 @@ jobs:
 
       # ── Step 5: Run the audit ─────────────────────────────────────────────
       - name: Run Network Auditor
-        run: |
-          export PYTHONPATH="${{ github.workspace }}"
-          python3 -m auditor.main
+        run: python3 auditor/main.py
 
       # ── Step 6: Save the report as a build artifact ───────────────────────
       # GitHub keeps this file for 30 days. You can download it from the
