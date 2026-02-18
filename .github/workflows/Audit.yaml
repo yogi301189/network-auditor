@@ -59,7 +59,12 @@ jobs:
 
       # ── Step 5: Run the audit ─────────────────────────────────────────────
       - name: Run Network Auditor
-        run: python -m auditor.main
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "Working directory: $(pwd)"
+          echo "Files present:"
+          ls -la
+          python -m auditor.main
 
       # ── Step 6: Save the report as a build artifact ───────────────────────
       # GitHub keeps this file for 30 days. You can download it from the
@@ -80,10 +85,11 @@ jobs:
         run: |
           git config user.name  "Network Auditor Bot"
           git config user.email "auditor@github-actions"
-          git add reports/
+          mkdir -p reports
+          git add reports/ || true
           # Only commit if there are actual changes (new report files)
           git diff --staged --quiet || git commit -m "audit: report for run #${{ github.run_number }}"
-          git push
+          git push || true
 
       # ── Step 8: Post to Slack (only if violations found) ──────────────────
       # Reads the latest summary.md and posts it to Slack.
