@@ -58,8 +58,17 @@ jobs:
           aws-region: us-east-1
 
       # ── Step 5: Run the audit ─────────────────────────────────────────────
-      - name: Run Network Auditor
-        run: python3 auditor/Main.py
+      # ── Step 5: Run the audit ─────────────────────────────────────────────
+      - name: Run Network Audit
+        run: |
+          # 1. Ensure we are in the root
+          cd ${{ github.workspace }}
+          
+          # 2. Add the current root to Python's search path
+          export PYTHONPATH=$PYTHONPATH:.
+          
+          # 3. Run it as a module (use lowercase 'auditor' if the folder is lowercase)
+          python3 -m auditor.Main
 
       # ── Step 6: Save the report as a build artifact ───────────────────────
       # GitHub keeps this file for 30 days. You can download it from the
