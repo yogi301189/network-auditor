@@ -103,20 +103,23 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
+          # Skip entirely if the secret isn't configured yet
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL not configured — skipping notification."
+            exit 0
+          fi
+
           # Find the most recently written summary file
           SUMMARY_FILE=$(ls -t reports/summary_*.md 2>/dev/null | head -1)
 
           if [ -z "$SUMMARY_FILE" ]; then
-            echo "No summary file found — skipping Slack notification"
+            echo "No summary file found — skipping Slack notification."
             exit 0
           fi
 
-          SUMMARY=$(cat "$SUMMARY_FILE")
+          # Post first 6 lines (the header block) to Slack
+          SUMMARY=$(head -6 "$SUMMARY_FILE" | sed 's/"/\\"/g' | tr '\n' ' ')
 
-          # Post to Slack using an Incoming Webhook
-          # The payload wraps the Markdown content in a Slack block
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -d "{\"text\": \"$(echo "$SUMMARY" | head -6 | sed 's/"/\\"/g' | tr '\n' ' ')\"}"
-
-          echo "Slack notification sent."
+            -d "{\"text\": \"$SUMMARY\"}"
