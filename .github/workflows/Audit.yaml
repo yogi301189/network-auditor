@@ -1,0 +1,112 @@
+# Network Auditor — GitHub Actions Workflow
+# ==========================================
+# This file tells GitHub to run the audit automatically.
+# Location must be exactly: .github/workflows/audit.yml
+#
+# Two triggers:
+#   1. Scheduled — every day at 06:00 UTC (cron syntax)
+#   2. Manual    — you can press "Run workflow" in the GitHub UI anytime
+
+name: Network Audit
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # 06:00 UTC daily — adjust to your timezone if needed
+  workflow_dispatch:        # enables the manual "Run workflow" button in GitHub UI
+
+# Only allow one audit to run at a time.
+# If a scan is already running and a new one triggers, the new one waits.
+concurrency:
+  group: network-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Run Network Audit
+    runs-on: ubuntu-latest  # GitHub provides this VM for free
+
+    # These permissions let the workflow write its report back to the repo
+    permissions:
+      contents: write       # needed to commit the report files
+      id-token: write       # needed for the AWS OIDC login (more secure than API keys)
+
+    steps:
+
+      # ── Step 1: Get the code ───────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Step 2: Set up Python ─────────────────────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"      # caches pip packages between runs — speeds up the workflow
+
+      # ── Step 3: Install dependencies ──────────────────────────────────────
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── Step 4: Authenticate to AWS ───────────────────────────────────────
+      # We use OIDC (OpenID Connect) — GitHub proves its identity to AWS directly.
+      # This means NO long-lived API keys stored in GitHub Secrets. Much safer.
+      # See setup instructions in the README below.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_AUDIT_ROLE_ARN }}
+          aws-region: us-east-1
+
+      # ── Step 5: Run the audit ─────────────────────────────────────────────
+      - name: Run Network Auditor
+        run: python -m auditor.main
+
+      # ── Step 6: Save the report as a build artifact ───────────────────────
+      # GitHub keeps this file for 30 days. You can download it from the
+      # Actions tab in your repo — useful for historical comparison.
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        if: always()    # upload even if the audit found violations
+        with:
+          name: audit-report-${{ github.run_number }}
+          path: reports/
+          retention-days: 30
+
+      # ── Step 7: Commit the report back to the repo ────────────────────────
+      # This creates a permanent history of every scan directly in Git.
+      # You can see the trend over time just by looking at the reports/ folder.
+      - name: Commit report to repository
+        if: always()
+        run: |
+          git config user.name  "Network Auditor Bot"
+          git config user.email "auditor@github-actions"
+          git add reports/
+          # Only commit if there are actual changes (new report files)
+          git diff --staged --quiet || git commit -m "audit: report for run #${{ github.run_number }}"
+          git push
+
+      # ── Step 8: Post to Slack (only if violations found) ──────────────────
+      # Reads the latest summary.md and posts it to Slack.
+      # Only fires when there are findings — no noise on clean days.
+      - name: Post to Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          # Find the most recently written summary file
+          SUMMARY_FILE=$(ls -t reports/summary_*.md 2>/dev/null | head -1)
+
+          if [ -z "$SUMMARY_FILE" ]; then
+            echo "No summary file found — skipping Slack notification"
+            exit 0
+          fi
+
+          SUMMARY=$(cat "$SUMMARY_FILE")
+
+          # Post to Slack using an Incoming Webhook
+          # The payload wraps the Markdown content in a Slack block
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"$(echo "$SUMMARY" | head -6 | sed 's/"/\\"/g' | tr '\n' ' ')\"}"
+
+          echo "Slack notification sent."
