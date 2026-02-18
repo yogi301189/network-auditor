@@ -68,7 +68,7 @@ jobs:
           export PYTHONPATH=$PYTHONPATH:.
           
           # 3. Run it as a module (use lowercase 'auditor' if the folder is lowercase)
-          python3 -m auditor.Main
+          python3 -m auditor.main
 
       # ── Step 6: Save the report as a build artifact ───────────────────────
       # GitHub keeps this file for 30 days. You can download it from the
