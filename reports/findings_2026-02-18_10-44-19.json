@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "generated_at": "2026-02-18_10-44-19",
+    "total_findings": 22,
+    "critical_count": 5,
+    "warning_count": 17
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-0ce2d43c504c3f16b",
+      "region": "ap-south-1",
+      "detail": "SG 'launch-wizard-3' allows IPv4 0.0.0.0/0 on port 22"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-004069798bbfb303e",
+      "region": "ap-south-1",
+      "detail": "SG 'launch-wizard-1' allows IPv4 0.0.0.0/0 on port 22"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-0969a1562c020d6c6",
+      "region": "ap-south-1",
+      "detail": "SG 'All tcp' allows IPv4 0.0.0.0/0 on port 22, port 3389"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-0fe3e52206aee1831",
+      "region": "ap-south-1",
+      "detail": "SG 'launch-wizard-2' allows IPv4 0.0.0.0/0 on port 22"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-05d8798e3348e6ba0",
+      "region": "us-east-1",
+      "detail": "SG 'launch-wizard-1' allows IPv4 0.0.0.0/0 on port 22"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0d818ad694c6f7008",
+      "region": "ap-northeast-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-06293036258c30f90",
+      "region": "ap-northeast-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-05af157a954bd56a4",
+      "region": "ap-northeast-3",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0d53b44cf8576ef76",
+      "region": "ap-south-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-04faa0528ebedbde8",
+      "region": "ap-southeast-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-018433b1d16f605cb",
+      "region": "ap-southeast-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-091406331444ebd5f",
+      "region": "ca-central-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-03fbd8346caeef349",
+      "region": "eu-central-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-08ab7609e26849d5a",
+      "region": "eu-north-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-04e194d16add5e0d8",
+      "region": "eu-west-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-01e62ebaef1e48f45",
+      "region": "eu-west-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0d6d16d342e3071c5",
+      "region": "eu-west-3",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-098f06707a0790690",
+      "region": "sa-east-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-09fa7904a1cb3fc43",
+      "region": "us-east-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-07682d25de483e41d",
+      "region": "us-east-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0d7969b566b9cd48b",
+      "region": "us-west-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0402e4c84a6fa2e22",
+      "region": "us-west-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project"
+    }
+  ]
+}
