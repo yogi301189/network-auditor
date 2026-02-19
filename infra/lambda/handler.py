@@ -19,6 +19,52 @@ import boto3
 from datetime import datetime, timezone
 
 
+# ── ACCOUNT ROLE MAP ──────────────────────────────────────────────────────────
+# Maps target account IDs to their auditor role ARNs.
+# When an event arrives from Account B, Lambda assumes this role
+# to fetch the Security Group details from Account B.
+# Add new accounts here as you onboard them.
+
+ACCOUNT_ROLES = {
+    "278119224464": "arn:aws:iam::278119224464:role/NetworkAuditorTargetRole",
+    # "ACCOUNT_C_ID": "arn:aws:iam::ACCOUNT_C_ID:role/NetworkAuditorTargetRole",
+}
+
+# This Lambda's own account ID — no role assumption needed for home account
+HOME_ACCOUNT = os.environ.get("HOME_ACCOUNT_ID", "222892837737")
+
+
+def get_ec2_client_for_account(account_id: str, region: str):
+    """
+    Returns an EC2 client for the correct account.
+    For the home account — uses Lambda's own credentials directly.
+    For target accounts — assumes their NetworkAuditorTargetRole via STS.
+    """
+    if account_id == HOME_ACCOUNT or account_id not in ACCOUNT_ROLES:
+        return boto3.client("ec2", region_name=region)
+
+    role_arn = ACCOUNT_ROLES[account_id]
+    sts = boto3.client("sts")
+
+    try:
+        response = sts.assume_role(
+            RoleArn         = role_arn,
+            RoleSessionName = f"NetworkAuditorHandler-{account_id}",
+            DurationSeconds = 900,  # 15 minutes — enough for one remediation
+        )
+        creds = response["Credentials"]
+        session = boto3.Session(
+            aws_access_key_id     = creds["AccessKeyId"],
+            aws_secret_access_key = creds["SecretAccessKey"],
+            aws_session_token     = creds["SessionToken"],
+        )
+        return session.client("ec2", region_name=region)
+
+    except Exception as e:
+        print(f"[ERROR] Could not assume role for account {account_id}: {e}")
+        return boto3.client("ec2", region_name=region)
+
+
 # ── CLOUDWATCH METRICS ────────────────────────────────────────────────────────
 
 def publish_metric(metric_name: str, value: float, unit: str = "Count", dimensions: list = []) -> None:
@@ -121,13 +167,12 @@ def is_dangerous_rule(ip_permission: dict) -> tuple[bool, list[int]]:
     return (ipv4_open or ipv6_open), exposed
 
 
-def get_sg_details(sg_id: str, region: str) -> dict:
+def get_sg_details(sg_id: str, region: str, account_id: str) -> dict:
     """
-    Fetches the current state of the Security Group from AWS.
-    We fetch live state rather than trusting the event payload alone —
-    the event tells us a change happened; the API tells us what it looks like now.
+    Fetches the current state of the Security Group from the correct account.
+    Uses cross-account role assumption for target accounts.
     """
-    ec2 = boto3.client("ec2", region_name=region)
+    ec2 = get_ec2_client_for_account(account_id, region)
     try:
         response = ec2.describe_security_groups(GroupIds=[sg_id])
         return response["SecurityGroups"][0] if response["SecurityGroups"] else {}
@@ -138,20 +183,18 @@ def get_sg_details(sg_id: str, region: str) -> dict:
 
 # ── AUTO-REMEDIATION ─────────────────────────────────────────────────────────
 
-def revoke_bad_rule(sg_id: str, rule: dict, region: str) -> bool:
+def revoke_bad_rule(sg_id: str, rule: dict, region: str, account_id: str) -> bool:
     """
-    Removes the specific offending inbound rule from the Security Group.
-    Only removes the exact bad rule — leaves all other rules untouched.
-
-    Returns True if successful, False if it failed.
+    Removes the specific offending inbound rule from the Security Group
+    in the correct account using cross-account role assumption.
     """
-    ec2 = boto3.client("ec2", region_name=region)
+    ec2 = get_ec2_client_for_account(account_id, region)
     try:
         ec2.revoke_security_group_ingress(
             GroupId=sg_id,
             IpPermissions=[rule],
         )
-        print(f"[REMEDIATED] Removed bad rule from {sg_id}")
+        print(f"[REMEDIATED] Removed bad rule from {sg_id} in account {account_id}")
         return True
     except Exception as e:
         print(f"[ERROR] Failed to remove rule from {sg_id}: {e}")
@@ -206,8 +249,11 @@ def lambda_handler(event: dict, context) -> dict:
     print(f"[INFO] Event received: {json.dumps(event)}")
 
     # ── Extract key fields from the EventBridge event ──
-    detail   = event.get("detail", {})
-    region   = event.get("region", "unknown")
+    detail     = event.get("detail", {})
+    region     = event.get("region", "unknown")
+    account_id = event.get("account", HOME_ACCOUNT)  # which account the event came from
+
+    print(f"[INFO] Event from account: {account_id} region: {region}")
 
     # The API call that triggered this event
     event_name = detail.get("eventName", "")
@@ -233,7 +279,7 @@ def lambda_handler(event: dict, context) -> dict:
     print(f"[INFO] Checking Security Group: {sg_id} in {region}")
 
     # ── Fetch live SG state and check all inbound rules ──
-    sg = get_sg_details(sg_id, region)
+    sg = get_sg_details(sg_id, region, account_id)
     if not sg:
         return {"status": "error", "reason": f"could not fetch {sg_id}"}
 
@@ -244,33 +290,33 @@ def lambda_handler(event: dict, context) -> dict:
 
         if dangerous:
             violations_found = True
-            print(f"[ALERT] Violation detected on {sg_id} — ports {exposed_ports}")
+            print(f"[ALERT] Violation detected on {sg_id} in account {account_id} — ports {exposed_ports}")
 
-            # ── Publish violation metric ──
             publish_metric(
                 metric_name = "ViolationDetected",
                 value       = 1.0,
                 dimensions  = [
-                    {"Name": "Rule",   "Value": "no_open_ssh_rdp"},
-                    {"Name": "Region", "Value": region},
+                    {"Name": "Rule",      "Value": "no_open_ssh_rdp"},
+                    {"Name": "Region",    "Value": region},
+                    {"Name": "AccountId", "Value": account_id},
                 ]
             )
 
-            # ── Auto-remediation ──
-            remediated = revoke_bad_rule(sg_id, rule, region)
+            remediated = revoke_bad_rule(sg_id, rule, region, account_id)
 
-            # ── Publish remediation metric ──
             publish_metric(
                 metric_name = "RemediationSuccess" if remediated else "RemediationFailed",
                 value       = 1.0,
-                dimensions  = [{"Name": "Region", "Value": region}]
+                dimensions  = [
+                    {"Name": "Region",    "Value": region},
+                    {"Name": "AccountId", "Value": account_id},
+                ]
             )
 
-            # ── Slack alert ──
             message = build_alert_message(sg, exposed_ports, region, remediated)
             post_to_slack(message)
 
-            print(f"[VIOLATION] sg={sg_id} region={region} ports={exposed_ports} remediated={remediated}")
+            print(f"[VIOLATION] sg={sg_id} account={account_id} region={region} ports={exposed_ports} remediated={remediated}")
 
     if not violations_found:
         print(f"[INFO] {sg_id} — no violations found in current state")

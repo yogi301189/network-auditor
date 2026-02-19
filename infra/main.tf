@@ -159,7 +159,80 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 }
 
 
-# ── CLOUDWATCH PERMISSIONS FOR LAMBDA ────────────────────────────────────────
+# ── CROSS-ACCOUNT EVENT BUS (Account A) ──────────────────────────────────────
+# A custom Event Bus in Account A that receives Security Group change
+# events forwarded from all target accounts.
+# The default Event Bus cannot receive cross-account events — we need a custom one.
+
+resource "aws_cloudwatch_event_bus" "central" {
+  name = "NetworkAuditorCentral"
+}
+
+# Policy that allows Account B (and any future accounts) to publish events
+resource "aws_cloudwatch_event_bus_policy" "allow_target_accounts" {
+  event_bus_name = aws_cloudwatch_event_bus.central.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowTargetAccountsToPublish"
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::278119224464:root",   # Account B
+            # Add more accounts here as you onboard them:
+            # "arn:aws:iam::ACCOUNT_C_ID:root",
+          ]
+        }
+        Action   = "events:PutEvents"
+        Resource = aws_cloudwatch_event_bus.central.arn
+      }
+    ]
+  })
+}
+
+# Connect the central Event Bus to the existing Lambda
+# When Account B forwards an event here, Lambda fires automatically
+resource "aws_cloudwatch_event_rule" "central_sg_changes" {
+  name           = "NetworkAuditorCentralSGChanges"
+  description    = "Fires when target accounts forward SG change events"
+  event_bus_name = aws_cloudwatch_event_bus.central.name
+
+  event_pattern = jsonencode({
+    source      = ["aws.ec2"]
+    detail-type = ["AWS API Call via CloudTrail"]
+    detail = {
+      eventName = [
+        "AuthorizeSecurityGroupIngress",
+        "ModifySecurityGroupRules",
+      ]
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "central_to_lambda" {
+  rule           = aws_cloudwatch_event_rule.central_sg_changes.name
+  event_bus_name = aws_cloudwatch_event_bus.central.name
+  arn            = aws_lambda_function.sg_detector.arn
+}
+
+resource "aws_lambda_permission" "allow_central_eventbridge" {
+  statement_id  = "AllowCentralEventBridgeInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sg_detector.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.central_sg_changes.arn
+}
+
+
+# ── OUTPUT: CENTRAL EVENT BUS ARN ────────────────────────────────────────────
+# You'll need this ARN when setting up the forwarding rule in Account B
+
+output "central_event_bus_arn" {
+  value       = aws_cloudwatch_event_bus.central.arn
+  description = "Paste this ARN into Account B's EventBridge forwarding rule"
+}
 # Allow Lambda to publish custom metrics to CloudWatch
 
 resource "aws_iam_role_policy" "lambda_cloudwatch_metrics" {
@@ -196,8 +269,9 @@ resource "aws_cloudwatch_dashboard" "network_auditor" {
           title   = "🔴 Violations Detected Over Time"
           view    = "timeSeries"
           stacked = false
-          period  = 86400   # 1 day buckets
+          period  = 86400
           stat    = "Sum"
+          region  = var.aws_region
           metrics = [[
             "NetworkAuditor",
             "ViolationDetected",
@@ -220,6 +294,7 @@ resource "aws_cloudwatch_dashboard" "network_auditor" {
           stacked = true
           period  = 86400
           stat    = "Sum"
+          region  = var.aws_region
           metrics = [
             ["NetworkAuditor", "RemediationSuccess", { label = "Auto-Fixed",     color = "#1d8102" }],
             ["NetworkAuditor", "RemediationFailed",  { label = "Manual Required", color = "#ff7f0e" }],
@@ -238,8 +313,9 @@ resource "aws_cloudwatch_dashboard" "network_auditor" {
         properties = {
           title   = "Total Violations (30 days)"
           view    = "singleValue"
-          period  = 2592000   # 30 days
+          period  = 2592000
           stat    = "Sum"
+          region  = var.aws_region
           metrics = [["NetworkAuditor", "ViolationDetected"]]
         }
       },
@@ -256,6 +332,7 @@ resource "aws_cloudwatch_dashboard" "network_auditor" {
           view    = "singleValue"
           period  = 2592000
           stat    = "Sum"
+          region  = var.aws_region
           metrics = [["NetworkAuditor", "RemediationSuccess"]]
         }
       },
