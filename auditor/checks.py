@@ -188,11 +188,250 @@ def find_public_rds(region: str) -> list[dict]:
     return findings
 
 
+# ── GOLDEN RULE 5: PUBLIC S3 BUCKETS ─────────────────────────────────────────
+#
+# Rule: No S3 bucket may have Block Public Access disabled.
+# Why:  Public S3 buckets are one of the most common causes of data breaches.
+#       AWS provides a dedicated "Block Public Access" setting per bucket —
+#       we check that all four blocks are enabled.
+
+def find_public_s3_buckets(region: str) -> list[dict]:
+    """
+    S3 is a global service but buckets are region-specific.
+    We only scan buckets in the current region to avoid double-counting.
+    Checks the Block Public Access settings — all four must be True.
+    """
+    findings = []
+
+    # S3 bucket listing is always done against us-east-1 regardless of region.
+    # We filter to the current region after listing.
+    s3 = boto3.client("s3", region_name="us-east-1")
+
+    try:
+        all_buckets = s3.list_buckets().get("Buckets", [])
+    except Exception:
+        return findings
+
+    for bucket in all_buckets:
+        bucket_name = bucket["Name"]
+
+        # Check which region this bucket lives in
+        try:
+            location = s3.get_bucket_location(Bucket=bucket_name)
+            # AWS returns None for us-east-1 — normalise it
+            bucket_region = location["LocationConstraint"] or "us-east-1"
+        except Exception:
+            continue
+
+        # Only check buckets that belong to the current region
+        if bucket_region != region:
+            continue
+
+        # Now check the Block Public Access configuration
+        try:
+            bpa = s3.get_public_access_block(Bucket=bucket_name)
+            config = bpa["PublicAccessBlockConfiguration"]
+
+            # All four settings must be True for the bucket to be fully protected
+            all_blocked = all([
+                config.get("BlockPublicAcls",       False),
+                config.get("IgnorePublicAcls",      False),
+                config.get("BlockPublicPolicy",     False),
+                config.get("RestrictPublicBuckets", False),
+            ])
+
+            if not all_blocked:
+                # Find which specific settings are off — useful for remediation
+                disabled = [
+                    name for name, key in {
+                        "BlockPublicAcls":       "BlockPublicAcls",
+                        "IgnorePublicAcls":      "IgnorePublicAcls",
+                        "BlockPublicPolicy":     "BlockPublicPolicy",
+                        "RestrictPublicBuckets": "RestrictPublicBuckets",
+                    }.items()
+                    if not config.get(key, False)
+                ]
+                findings.append(_finding(
+                    severity    = "CRITICAL",
+                    rule        = "no_public_s3_buckets",
+                    resource_id = bucket_name,
+                    region      = region,
+                    detail      = f"Block Public Access disabled: {', '.join(disabled)}",
+                ))
+
+        except s3.exceptions.NoSuchPublicAccessBlockConfiguration:
+            # No Block Public Access config at all — bucket is open by default
+            findings.append(_finding(
+                severity    = "CRITICAL",
+                rule        = "no_public_s3_buckets",
+                resource_id = bucket_name,
+                region      = region,
+                detail      = "No Block Public Access configuration — bucket is open by default",
+            ))
+        except Exception:
+            continue
+
+    return findings
+
+
 # ── GOLDEN RULE 4: ORPHANED ELASTIC IPs ──────────────────────────────────────
 #
 # Rule: Every Elastic IP must be attached to a running resource.
 # Why:  Unattached EIPs cost money (~$4/month each) and accumulate silently.
 #       They also represent unused public IP space that should be released.
+
+# ── GOLDEN RULE 6: UNENCRYPTED S3 BUCKETS ────────────────────────────────────
+#
+# Rule: Every S3 bucket must have server-side encryption enabled.
+# Why:  Encryption at rest protects data if AWS infrastructure is ever
+#       compromised. It's free, one setting, and there's no excuse not to.
+
+def find_unencrypted_s3_buckets(region: str) -> list[dict]:
+    """
+    Checks every bucket in this region for a default encryption configuration.
+    AWS S3 now encrypts by default for new buckets (since Jan 2023), but older
+    buckets may still have no encryption configured — we catch those.
+    """
+    findings = []
+    s3 = boto3.client("s3", region_name="us-east-1")
+
+    try:
+        all_buckets = s3.list_buckets().get("Buckets", [])
+    except Exception:
+        return findings
+
+    for bucket in all_buckets:
+        bucket_name = bucket["Name"]
+
+        # Filter to current region only
+        try:
+            location = s3.get_bucket_location(Bucket=bucket_name)
+            bucket_region = location["LocationConstraint"] or "us-east-1"
+        except Exception:
+            continue
+
+        if bucket_region != region:
+            continue
+
+        # Check server-side encryption configuration
+        try:
+            enc = s3.get_bucket_encryption(Bucket=bucket_name)
+            rules = enc["ServerSideEncryptionConfiguration"].get("Rules", [])
+
+            # Verify at least one rule exists and uses AES256 or aws:kms
+            if not rules:
+                raise Exception("No encryption rules")
+
+            algo = rules[0].get("ApplyServerSideEncryptionByDefault", {}).get("SSEAlgorithm", "")
+            if algo not in ("AES256", "aws:kms"):
+                findings.append(_finding(
+                    severity    = "WARNING",
+                    rule        = "s3_encryption_enabled",
+                    resource_id = bucket_name,
+                    region      = region,
+                    detail      = f"Bucket uses unknown encryption algorithm: {algo}",
+                ))
+
+        except s3.exceptions.ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            if error_code == "ServerSideEncryptionConfigurationNotFoundError":
+                findings.append(_finding(
+                    severity    = "WARNING",
+                    rule        = "s3_encryption_enabled",
+                    resource_id = bucket_name,
+                    region      = region,
+                    detail      = "No default encryption configured on bucket",
+                ))
+        except Exception:
+            continue
+
+    return findings
+
+
+# ── GOLDEN RULE 7: UNENCRYPTED EBS VOLUMES ───────────────────────────────────
+#
+# Rule: All EBS volumes must be encrypted.
+# Why:  Unencrypted EBS snapshots can be shared accidentally, exposing raw
+#       disk data. Encryption at rest is free on modern instance types.
+
+def find_unencrypted_ebs_volumes(region: str) -> list[dict]:
+    """
+    Scans all EBS volumes in the region and flags any where
+    Encrypted = False. Includes the attached instance ID if available
+    so the team knows exactly which server is affected.
+    """
+    ec2 = boto3.client("ec2", region_name=region)
+    findings = []
+
+    paginator = ec2.get_paginator("describe_volumes")
+
+    for page in paginator.paginate():
+        for volume in page["Volumes"]:
+            if not volume.get("Encrypted", False):
+                volume_id = volume["VolumeId"]
+                state     = volume.get("State", "unknown")
+
+                # Find attached instance if any
+                attachments = volume.get("Attachments", [])
+                instance_id = attachments[0]["InstanceId"] if attachments else "not attached"
+
+                findings.append(_finding(
+                    severity    = "WARNING",
+                    rule        = "ebs_encryption_enabled",
+                    resource_id = volume_id,
+                    region      = region,
+                    detail      = f"EBS volume is unencrypted (state: {state}, instance: {instance_id})",
+                ))
+
+    return findings
+
+
+# ── GOLDEN RULE 8: EC2 IMDSv2 NOT ENFORCED ───────────────────────────────────
+#
+# Rule: All EC2 instances must enforce IMDSv2 (token-required mode).
+# Why:  IMDSv1 is vulnerable to Server-Side Request Forgery (SSRF) attacks.
+#       An attacker exploiting an SSRF bug can steal IAM credentials from the
+#       metadata service (169.254.169.254) using a simple HTTP request.
+#       IMDSv2 requires a session token, blocking this attack entirely.
+
+def find_imdsv1_instances(region: str) -> list[dict]:
+    """
+    Scans all running EC2 instances and flags any where the metadata
+    service is set to 'optional' (IMDSv1 allowed) instead of 'required'.
+    """
+    ec2 = boto3.client("ec2", region_name=region)
+    findings = []
+
+    paginator = ec2.get_paginator("describe_instances")
+
+    for page in paginator.paginate(
+        Filters=[{"Name": "instance-state-name", "Values": ["running", "stopped"]}]
+    ):
+        for reservation in page["Reservations"]:
+            for instance in reservation["Instances"]:
+                instance_id = instance["InstanceId"]
+
+                # Get the Name tag for better context in the alert
+                tags = {t["Key"]: t["Value"] for t in instance.get("Tags", [])}
+                name = tags.get("Name", "unnamed")
+
+                # MetadataOptions controls IMDSv1 vs IMDSv2
+                metadata_opts = instance.get("MetadataOptions", {})
+                http_tokens   = metadata_opts.get("HttpTokens", "optional")
+
+                # "optional" = IMDSv1 allowed (vulnerable)
+                # "required" = IMDSv2 enforced (secure)
+                if http_tokens != "required":
+                    findings.append(_finding(
+                        severity    = "CRITICAL",
+                        rule        = "ec2_imdsv2_required",
+                        resource_id = instance_id,
+                        region      = region,
+                        detail      = f"Instance '{name}' allows IMDSv1 — vulnerable to SSRF credential theft",
+                    ))
+
+    return findings
+
 
 def find_orphaned_eips(region: str) -> list[dict]:
     """

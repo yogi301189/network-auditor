@@ -23,6 +23,10 @@ GOLDEN_RULES = [
     checks.find_open_ssh_rdp,
     checks.find_public_rds,
     checks.find_orphaned_eips,
+    checks.find_public_s3_buckets,
+    checks.find_unencrypted_s3_buckets,
+    checks.find_unencrypted_ebs_volumes,
+    checks.find_imdsv1_instances,
 ]
 
 
