@@ -159,8 +159,128 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 }
 
 
+# ── CLOUDWATCH PERMISSIONS FOR LAMBDA ────────────────────────────────────────
+# Allow Lambda to publish custom metrics to CloudWatch
+
+resource "aws_iam_role_policy" "lambda_cloudwatch_metrics" {
+  name = "NetworkAuditorLambdaCloudWatchMetrics"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["cloudwatch:PutMetricData"]
+      Resource = "*"
+    }]
+  })
+}
+
+
+# ── CLOUDWATCH DASHBOARD ──────────────────────────────────────────────────────
+
+resource "aws_cloudwatch_dashboard" "network_auditor" {
+  dashboard_name = "NetworkAuditor"
+
+  dashboard_body = jsonencode({
+    widgets = [
+
+      # ── Widget 1: Violations Over Time (top left) ──
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          title   = "🔴 Violations Detected Over Time"
+          view    = "timeSeries"
+          stacked = false
+          period  = 86400   # 1 day buckets
+          stat    = "Sum"
+          metrics = [[
+            "NetworkAuditor",
+            "ViolationDetected",
+            { label = "Violations", color = "#d13212" }
+          ]]
+          yAxis = { left = { min = 0 } }
+        }
+      },
+
+      # ── Widget 2: Remediation Success vs Failure (top right) ──
+      {
+        type   = "metric"
+        x      = 12
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          title   = "✅ Remediation Outcomes"
+          view    = "timeSeries"
+          stacked = true
+          period  = 86400
+          stat    = "Sum"
+          metrics = [
+            ["NetworkAuditor", "RemediationSuccess", { label = "Auto-Fixed",     color = "#1d8102" }],
+            ["NetworkAuditor", "RemediationFailed",  { label = "Manual Required", color = "#ff7f0e" }],
+          ]
+          yAxis = { left = { min = 0 } }
+        }
+      },
+
+      # ── Widget 3: Total violations (single number — bottom left) ──
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 6
+        height = 3
+        properties = {
+          title   = "Total Violations (30 days)"
+          view    = "singleValue"
+          period  = 2592000   # 30 days
+          stat    = "Sum"
+          metrics = [["NetworkAuditor", "ViolationDetected"]]
+        }
+      },
+
+      # ── Widget 4: Total auto-remediated (single number) ──
+      {
+        type   = "metric"
+        x      = 6
+        y      = 6
+        width  = 6
+        height = 3
+        properties = {
+          title   = "Auto-Remediated (30 days)"
+          view    = "singleValue"
+          period  = 2592000
+          stat    = "Sum"
+          metrics = [["NetworkAuditor", "RemediationSuccess"]]
+        }
+      },
+
+      # ── Widget 5: Lambda execution logs (bottom right) ──
+      {
+        type   = "log"
+        x      = 12
+        y      = 6
+        width  = 12
+        height = 6
+        properties = {
+          title   = "📋 Recent Violation Log"
+          view    = "table"
+          period  = 86400
+          query   = "SOURCE '/aws/lambda/NetworkAuditorSGDetector' | fields @timestamp, @message | filter @message like /VIOLATION/ | sort @timestamp desc | limit 20"
+          region  = var.aws_region
+        }
+      },
+    ]
+  })
+}
+
+
 # ── OUTPUTS ───────────────────────────────────────────────────────────────────
-# Printed after terraform apply — useful references
 
 output "lambda_function_name" {
   value       = aws_lambda_function.sg_detector.function_name
@@ -175,4 +295,9 @@ output "lambda_function_arn" {
 output "eventbridge_rule_name" {
   value       = aws_cloudwatch_event_rule.sg_changes.name
   description = "Name of the EventBridge rule watching for SG changes"
+}
+
+output "dashboard_url" {
+  value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.network_auditor.dashboard_name}"
+  description = "Direct URL to the CloudWatch dashboard"
 }
