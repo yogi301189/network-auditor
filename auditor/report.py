@@ -128,7 +128,9 @@ def _write_markdown(findings: list[dict], timestamp: str) -> Path:
         lines.append("*These require immediate attention.*")
         lines.append("")
         for f in _sort_findings(critical):
-            lines.append(f"**{f['rule']}** — `{f['resource_id']}` ({f['region']})")
+            account = f.get("account_name", "")
+            account_str = f" | {account}" if account else ""
+            lines.append(f"**{f['rule']}** — `{f['resource_id']}` ({f['region']}{account_str})")
             lines.append(f"> {f['detail']}")
             lines.append("")
 
@@ -138,7 +140,9 @@ def _write_markdown(findings: list[dict], timestamp: str) -> Path:
         lines.append("*Hygiene and cost issues — not urgent, but track them.*")
         lines.append("")
         for f in _sort_findings(warnings):
-            lines.append(f"**{f['rule']}** — `{f['resource_id']}` ({f['region']})")
+            account = f.get("account_name", "")
+            account_str = f" | {account}" if account else ""
+            lines.append(f"**{f['rule']}** — `{f['resource_id']}` ({f['region']}{account_str})")
             lines.append(f"> {f['detail']}")
             lines.append("")
 

@@ -1,0 +1,14 @@
+[
+  {
+    "account_id": "222892837737",
+    "account_name": "Auditor (Primary)",
+    "role_arn": null,
+    "notes": "Home account — scanned directly, no role assumption needed"
+  },
+  {
+    "account_id": "278119224464",
+    "account_name": "Target (Secondary)",
+    "role_arn": "arn:aws:iam::278119224464:role/NetworkAuditorTargetRole",
+    "notes": "Target account — scanned via STS AssumeRole"
+  }
+]

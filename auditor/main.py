@@ -1,23 +1,22 @@
 """
 Network Auditor — main.py
 =========================
-The entry point. This file does three things only:
-  1. Gets the list of AWS regions to scan
-  2. Runs every Golden Rule check across every region
-  3. Passes the findings to the reporter
+Multi-account entry point. Scans every account in accounts.json
+by either using direct credentials (home account) or assuming
+a cross-account role via STS (target accounts).
 
-It contains NO business logic. All rules live in checks.py.
-All formatting lives in report.py. This file just coordinates.
+Every finding is tagged with account_id and account_name so the
+report clearly shows which account each violation came from.
 """
 
+import json
 import boto3
+from pathlib import Path
 from auditor import checks, report
 
 
-# ── CONFIGURATION ────────────────────────────────────────────────────────────
+# ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
-# These are the rules we enforce. Each entry is a function from checks.py.
-# To add a new rule later, write the function in checks.py and add it here.
 GOLDEN_RULES = [
     checks.find_untagged_vpcs,
     checks.find_open_ssh_rdp,
@@ -29,53 +28,124 @@ GOLDEN_RULES = [
     checks.find_imdsv1_instances,
 ]
 
+ACCOUNTS_FILE = Path(__file__).parent.parent / "accounts.json"
 
-# ── HELPERS ──────────────────────────────────────────────────────────────────
 
-def get_active_regions() -> list[str]:
+# ── ACCOUNT LOADER ────────────────────────────────────────────────────────────
+
+def load_accounts() -> list[dict]:
+    with open(ACCOUNTS_FILE) as f:
+        accounts = json.load(f)
+    print(f"[INFO] Loaded {len(accounts)} account(s) from accounts.json")
+    return accounts
+
+
+# ── CREDENTIAL MANAGER ────────────────────────────────────────────────────────
+
+def get_session_for_account(account: dict) -> boto3.Session:
     """
-    Returns all regions that are enabled in this AWS account.
-    We use ec2.describe_regions() — a read-only API call.
+    Returns a boto3 Session for the given account.
+    If role_arn is null  → use default credentials (home account)
+    If role_arn is set   → assume the cross-account role via STS
     """
-    ec2 = boto3.client("ec2", region_name="us-east-1")
-    response = ec2.describe_regions(Filters=[{"Name": "opt-in-status", "Values": ["opt-in-not-required", "opted-in"]}])
-    regions = [r["RegionName"] for r in response["Regions"]]
-    print(f"[INFO] Found {len(regions)} active regions to scan.")
-    return sorted(regions)
+    role_arn = account.get("role_arn")
+
+    if not role_arn:
+        print(f"  [AUTH] Using direct credentials for {account['account_name']}")
+        return boto3.Session()
+
+    print(f"  [AUTH] Assuming role: {role_arn}")
+    sts = boto3.client("sts")
+
+    try:
+        response = sts.assume_role(
+            RoleArn         = role_arn,
+            RoleSessionName = f"NetworkAuditor-{account['account_id']}",
+            DurationSeconds = 3600,
+        )
+        creds = response["Credentials"]
+        return boto3.Session(
+            aws_access_key_id     = creds["AccessKeyId"],
+            aws_secret_access_key = creds["SecretAccessKey"],
+            aws_session_token     = creds["SessionToken"],
+        )
+
+    except Exception as e:
+        print(f"  [ERROR] Failed to assume role for {account['account_name']}: {e}")
+        return None
+
+
+# ── REGION DISCOVERY ──────────────────────────────────────────────────────────
+
+def get_active_regions(session: boto3.Session) -> list[str]:
+    ec2 = session.client("ec2", region_name="us-east-1")
+    response = ec2.describe_regions(
+        Filters=[{"Name": "opt-in-status", "Values": ["opt-in-not-required", "opted-in"]}]
+    )
+    return sorted(r["RegionName"] for r in response["Regions"])
+
+
+# ── ACCOUNT SCANNER ───────────────────────────────────────────────────────────
+
+def scan_account(account: dict, session: boto3.Session) -> list[dict]:
+    """
+    Runs all Golden Rules against all regions for a single account.
+    Tags every finding with account_id and account_name.
+    """
+    account_findings = []
+    account_id   = account["account_id"]
+    account_name = account["account_name"]
+
+    print(f"\n{'='*60}")
+    print(f"  SCANNING: {account_name} ({account_id})")
+    print(f"{'='*60}")
+
+    regions = get_active_regions(session)
+    print(f"  [INFO] Found {len(regions)} active regions")
+
+    for region in regions:
+        print(f"\n  [REGION] {region}")
+
+        for rule_function in GOLDEN_RULES:
+            rule_name = rule_function.__name__
+            print(f"    → Running: {rule_name}")
+
+            try:
+                findings = rule_function(region, session=session)
+
+                for finding in findings:
+                    finding["account_id"]   = account_id
+                    finding["account_name"] = account_name
+
+                account_findings.extend(findings)
+
+                if findings:
+                    print(f"      ⚠  {len(findings)} violation(s) found")
+                else:
+                    print(f"      ✓  Clean")
+
+            except Exception as e:
+                print(f"      [ERROR] {rule_name} failed in {region}: {e}")
+
+    return account_findings
 
 
 # ── MAIN ORCHESTRATOR ─────────────────────────────────────────────────────────
 
 def run_audit() -> list[dict]:
-    """
-    The core loop. For every region, runs every Golden Rule check.
-    Returns a flat list of all findings across all regions and rules.
-    """
     all_findings = []
-    regions = get_active_regions()
+    accounts     = load_accounts()
 
-    for region in regions:
-        print(f"\n[SCANNING] {region}")
+    for account in accounts:
+        session = get_session_for_account(account)
 
-        for rule_function in GOLDEN_RULES:
-            rule_name = rule_function.__name__  # e.g. "find_open_ssh_rdp"
-            print(f"  → Running: {rule_name}")
+        if session is None:
+            print(f"  [SKIP] Could not get session for {account['account_name']} — skipping")
+            continue
 
-            try:
-                # Each check function takes a region and returns a list of findings.
-                # An empty list means: no violations found. That's the happy path.
-                findings = rule_function(region)
-                all_findings.extend(findings)
-
-                if findings:
-                    print(f"    ⚠  {len(findings)} violation(s) found")
-                else:
-                    print(f"    ✓  Clean")
-
-            except Exception as e:
-                # If one check fails (e.g. a service isn't available in that region),
-                # we log it but don't stop the entire scan.
-                print(f"    [ERROR] {rule_name} failed in {region}: {e}")
+        findings = scan_account(account, session)
+        all_findings.extend(findings)
+        print(f"\n  [DONE] {account['account_name']} — {len(findings)} violation(s) found")
 
     return all_findings
 
@@ -84,15 +154,11 @@ def run_audit() -> list[dict]:
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  Network Auditor — Starting Scan")
+    print("  Network Auditor — Multi-Account Scan")
     print("  Mode: READ-ONLY (no changes will be made)")
     print("=" * 60)
 
-    # Step 1: Run all checks, collect findings
     findings = run_audit()
 
-    # Step 2: Print a summary to the terminal
-    print(f"\n[COMPLETE] Scan finished. Total violations found: {len(findings)}")
-
-    # Step 3: Generate the report (JSON + Markdown)
+    print(f"\n[COMPLETE] Total violations across all accounts: {len(findings)}")
     report.generate(findings)
