@@ -16,6 +16,36 @@ import os
 import urllib.request
 import urllib.error
 import boto3
+from datetime import datetime, timezone
+
+
+# ── CLOUDWATCH METRICS ────────────────────────────────────────────────────────
+
+def publish_metric(metric_name: str, value: float, unit: str = "Count", dimensions: list = []) -> None:
+    """
+    Publishes a custom metric to CloudWatch under the 'NetworkAuditor' namespace.
+    These metrics power the dashboard widgets.
+
+    metric_name : e.g. "ViolationDetected", "RemediationSuccess"
+    value       : numeric value (usually 1.0 for event counting)
+    unit        : CloudWatch unit string
+    dimensions  : list of {"Name": ..., "Value": ...} dicts for filtering
+    """
+    cw = boto3.client("cloudwatch", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+    try:
+        cw.put_metric_data(
+            Namespace="NetworkAuditor",
+            MetricData=[{
+                "MetricName": metric_name,
+                "Value":      value,
+                "Unit":       unit,
+                "Timestamp":  datetime.now(timezone.utc),
+                "Dimensions": dimensions,
+            }]
+        )
+        print(f"[METRIC] Published {metric_name}={value}")
+    except Exception as e:
+        print(f"[ERROR] Failed to publish metric {metric_name}: {e}")
 
 
 # ── GOLDEN RULES ──────────────────────────────────────────────────────────────
@@ -216,12 +246,27 @@ def lambda_handler(event: dict, context) -> dict:
             violations_found = True
             print(f"[ALERT] Violation detected on {sg_id} — ports {exposed_ports}")
 
+            # ── Publish violation metric ──
+            publish_metric(
+                metric_name = "ViolationDetected",
+                value       = 1.0,
+                dimensions  = [
+                    {"Name": "Rule",   "Value": "no_open_ssh_rdp"},
+                    {"Name": "Region", "Value": region},
+                ]
+            )
+
             # ── Auto-remediation ──
-            # Removes the exact offending rule — leaves all other rules untouched
             remediated = revoke_bad_rule(sg_id, rule, region)
 
+            # ── Publish remediation metric ──
+            publish_metric(
+                metric_name = "RemediationSuccess" if remediated else "RemediationFailed",
+                value       = 1.0,
+                dimensions  = [{"Name": "Region", "Value": region}]
+            )
+
             # ── Slack alert ──
-            # Message reflects whether remediation succeeded or needs manual action
             message = build_alert_message(sg, exposed_ports, region, remediated)
             post_to_slack(message)
 
