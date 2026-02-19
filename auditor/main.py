@@ -12,7 +12,7 @@ report clearly shows which account each violation came from.
 import json
 import boto3
 from pathlib import Path
-from auditor import checks, report
+from auditor import checks, report, pdf_report
 
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
@@ -162,3 +162,5 @@ if __name__ == "__main__":
 
     print(f"\n[COMPLETE] Total violations across all accounts: {len(findings)}")
     report.generate(findings)
+    latest_json = sorted(Path("reports").glob("findings_*.json"))[-1]
+    pdf_report.generate_pdf(str(latest_json))
