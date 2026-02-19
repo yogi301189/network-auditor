@@ -1,0 +1,190 @@
+{
+  "metadata": {
+    "generated_at": "2026-02-19_07-10-53",
+    "total_findings": 20,
+    "critical_count": 3,
+    "warning_count": 17
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-03b3e1779d32af4b9",
+      "region": "ap-south-1",
+      "detail": "SG 'launch-wizard-1' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-0b48161cb74a73a5b",
+      "region": "ap-south-1",
+      "detail": "SG 'All tcp' allows IPv4 0.0.0.0/0 on port 22, port 3389",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-061c68e3acdcd811c",
+      "region": "us-east-1",
+      "detail": "SG 'SSH comply' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-09905b62f248380fc",
+      "region": "ap-northeast-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0fce0275ad88a5cf7",
+      "region": "ap-northeast-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-09925f8e4e5c8f9b6",
+      "region": "ap-northeast-3",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0a5f4821c37edf172",
+      "region": "ap-south-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-02dc96d51c5c6e6a3",
+      "region": "ap-southeast-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-062d6f3d29bd729de",
+      "region": "ap-southeast-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-08342d12b517af47f",
+      "region": "ca-central-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-09955c3cd5527e7f4",
+      "region": "eu-central-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0e6349653a8c3355d",
+      "region": "eu-north-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-013d3f23b2bf79bca",
+      "region": "eu-west-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0a18d52f254c38ecf",
+      "region": "eu-west-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0667bb47506d9df76",
+      "region": "eu-west-3",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-099735e97749da757",
+      "region": "sa-east-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0c9996470e2fee59c",
+      "region": "us-east-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-006205e312cb64690",
+      "region": "us-east-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-060c9cf17e0cedbe7",
+      "region": "us-west-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0f0b47d6f7e2d812b",
+      "region": "us-west-2",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    }
+  ]
+}
