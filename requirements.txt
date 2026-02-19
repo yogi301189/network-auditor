@@ -2,3 +2,4 @@
 # Install with: pip install -r requirements.txt
 
 boto3>=1.34.0       # AWS SDK — the only external dependency for the core tool
+reportlab
