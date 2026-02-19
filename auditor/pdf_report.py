@@ -148,30 +148,37 @@ class ReportCanvas:
 # ── COVER PAGE ────────────────────────────────────────────────────────────────
 
 def build_cover(styles, metadata: dict) -> list:
-    w, h = A4
     elements = []
 
-    # Dark navy background block — simulated with a tall coloured table
-    cover_data = [[""]]
-    cover_table = Table(cover_data, colWidths=[170*mm], rowHeights=[60*mm])
-    cover_table.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,-1), DARK_NAVY),
-        ("TOPPADDING",    (0,0), (-1,-1), 20*mm),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 20*mm),
+    # Top spacer to push content down
+    elements.append(Spacer(1, 30*mm))
+
+    # Dark navy title block
+    title_data = [[
+        Paragraph(
+            "NetDevOps Security Audit<br/>Multi-Account AWS Security Report",
+            ParagraphStyle(
+                "cover_title",
+                fontSize=24, leading=32,
+                textColor=WHITE,
+                fontName="Helvetica-Bold",
+                alignment=TA_CENTER,
+                spaceAfter=0,
+            )
+        )
+    ]]
+    title_table = Table(title_data, colWidths=[170*mm])
+    title_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,-1), DARK_NAVY),
+        ("TOPPADDING",    (0,0), (-1,-1), 14*mm),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 14*mm),
+        ("LEFTPADDING",   (0,0), (-1,-1), 10*mm),
+        ("RIGHTPADDING",  (0,0), (-1,-1), 10*mm),
     ]))
-    elements.append(cover_table)
-    elements.append(Spacer(1, 8*mm))
+    elements.append(title_table)
+    elements.append(Spacer(1, 10*mm))
 
-    elements.append(Paragraph("NetDevOps Security Audit", ParagraphStyle(
-        "ct", fontSize=26, textColor=DARK_NAVY, fontName="Helvetica-Bold",
-        alignment=TA_CENTER, spaceAfter=4,
-    )))
-    elements.append(Paragraph("Multi-Account AWS Security Report", ParagraphStyle(
-        "cs", fontSize=14, textColor=MID_BLUE, fontName="Helvetica",
-        alignment=TA_CENTER, spaceAfter=20,
-    )))
-
-    elements.append(HRFlowable(width="100%", thickness=2, color=MID_BLUE, spaceAfter=10))
+    elements.append(HRFlowable(width="100%", thickness=2, color=MID_BLUE, spaceAfter=8*mm))
 
     # Meta table
     meta_rows = [
@@ -185,17 +192,17 @@ def build_cover(styles, metadata: dict) -> list:
 
     meta_table = Table(meta_rows, colWidths=[55*mm, 115*mm])
     meta_table.setStyle(TableStyle([
-        ("FONTNAME",    (0,0), (0,-1), "Helvetica-Bold"),
-        ("FONTNAME",    (1,0), (1,-1), "Helvetica"),
-        ("FONTSIZE",    (0,0), (-1,-1), 10),
-        ("TEXTCOLOR",   (0,0), (0,-1), MID_BLUE),
-        ("TEXTCOLOR",   (1,0), (1,-1), colors.HexColor("#2c3e50")),
+        ("FONTNAME",       (0,0), (0,-1), "Helvetica-Bold"),
+        ("FONTNAME",       (1,0), (1,-1), "Helvetica"),
+        ("FONTSIZE",       (0,0), (-1,-1), 10),
+        ("TEXTCOLOR",      (0,0), (0,-1), MID_BLUE),
+        ("TEXTCOLOR",      (1,0), (1,-1), colors.HexColor("#2c3e50")),
         ("ROWBACKGROUNDS", (0,0), (-1,-1), [WHITE, LIGHT_GREY]),
-        ("TOPPADDING",  (0,0), (-1,-1), 5),
-        ("BOTTOMPADDING",(0,0), (-1,-1), 5),
-        ("LEFTPADDING", (0,0), (-1,-1), 8),
-        ("BOX",         (0,0), (-1,-1), 0.5, MID_GREY),
-        ("INNERGRID",   (0,0), (-1,-1), 0.25, MID_GREY),
+        ("TOPPADDING",     (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING",  (0,0), (-1,-1), 5),
+        ("LEFTPADDING",    (0,0), (-1,-1), 8),
+        ("BOX",            (0,0), (-1,-1), 0.5, MID_GREY),
+        ("INNERGRID",      (0,0), (-1,-1), 0.25, MID_GREY),
     ]))
     elements.append(meta_table)
     elements.append(PageBreak())
