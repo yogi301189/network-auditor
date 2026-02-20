@@ -12,7 +12,7 @@ report clearly shows which account each violation came from.
 import json
 import boto3
 from pathlib import Path
-from auditor import checks, report, pdf_report
+from auditor import checks, report, pdf_report, cost_optimizer, cost_report
 
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
@@ -27,7 +27,13 @@ GOLDEN_RULES = [
     checks.find_unencrypted_ebs_volumes,
     checks.find_imdsv1_instances,
 ]
-
+COST_CHECKS = cost_optimizer.COST_CHECKS
+[
+     cost_optimizer.find_idle_load_balancers,
+     cost_optimizer.find_idle_nat_gateways,
+     cost_optimizer.find_unattached_ebs_volumes,
+     cost_optimizer.find_stopped_ec2_instances,
+ ]
 ACCOUNTS_FILE = Path(__file__).parent.parent / "accounts.json"
 
 
@@ -128,13 +134,58 @@ def scan_account(account: dict, session: boto3.Session) -> list[dict]:
                 print(f"      [ERROR] {rule_name} failed in {region}: {e}")
 
     return account_findings
+def scan_account_costs(account: dict, session: boto3.Session) -> list[dict]:
+    """
+    Runs all Cost Checks against all regions for a single account.
+    Same structure as scan_account() but calls COST_CHECKS instead of GOLDEN_RULES.
+    Tags every finding with account_id and account_name.
+    """
+    account_findings = []
+    account_id   = account["account_id"]
+    account_name = account["account_name"]
 
+    print(f"\n{'='*60}")
+    print(f"  COST SCAN: {account_name} ({account_id})")
+    print(f"{'='*60}")
+
+    regions = get_active_regions(session)
+
+    for region in regions:
+        print(f"\n  [REGION] {region}")
+
+        for check_function in COST_CHECKS:
+            check_name = check_function.__name__
+            print(f"    → Running: {check_name}")
+
+            try:
+                findings = check_function(region, session=session)
+
+                for finding in findings:
+                    finding["account_id"]   = account_id
+                    finding["account_name"] = account_name
+
+                account_findings.extend(findings)
+
+                if findings:
+                    waste = sum(f.get("monthly_cost_usd", 0) for f in findings)
+                    print(f"      💸 {len(findings)} idle resource(s) — ${waste:,.2f}/month wasted")
+                else:
+                    print(f"      ✓  Clean")
+
+            except Exception as e:
+                print(f"      [ERROR] {check_name} failed in {region}: {e}")
+
+    return account_findings
 
 # ── MAIN ORCHESTRATOR ─────────────────────────────────────────────────────────
 
-def run_audit() -> list[dict]:
-    all_findings = []
-    accounts     = load_accounts()
+def run_audit() -> tuple[list[dict], list[dict]]:
+    """
+    Returns (security_findings, cost_findings) — both lists.
+    """
+    all_security_findings = []
+    all_cost_findings     = []
+    accounts              = load_accounts()
 
     for account in accounts:
         session = get_session_for_account(account)
@@ -143,11 +194,18 @@ def run_audit() -> list[dict]:
             print(f"  [SKIP] Could not get session for {account['account_name']} — skipping")
             continue
 
-        findings = scan_account(account, session)
-        all_findings.extend(findings)
-        print(f"\n  [DONE] {account['account_name']} — {len(findings)} violation(s) found")
+        # Security scan (existing)
+        security_findings = scan_account(account, session)
+        all_security_findings.extend(security_findings)
+        print(f"\n  [DONE] {account['account_name']} — {len(security_findings)} security violation(s)")
 
-    return all_findings
+        # Cost scan (new)
+        cost_findings = scan_account_costs(account, session)
+        all_cost_findings.extend(cost_findings)
+        total_waste = sum(f.get("monthly_cost_usd", 0) for f in cost_findings)
+        print(f"  [DONE] {account['account_name']} — {len(cost_findings)} idle resource(s) — ${total_waste:,.2f}/month wasted")
+
+    return all_security_findings, all_cost_findings
 
 
 # ── ENTRY POINT ───────────────────────────────────────────────────────────────
@@ -158,9 +216,15 @@ if __name__ == "__main__":
     print("  Mode: READ-ONLY (no changes will be made)")
     print("=" * 60)
 
-    findings = run_audit()
+    security_findings, cost_findings = run_audit()
 
-    print(f"\n[COMPLETE] Total violations across all accounts: {len(findings)}")
-    report.generate(findings)
+    print(f"\n[COMPLETE] Security violations: {len(security_findings)}")
+    print(f"[COMPLETE] Idle resources:       {len(cost_findings)}")
+
+    # Security reports (existing)
+    report.generate(security_findings)
     latest_json = sorted(Path("reports").glob("findings_*.json"))[-1]
     pdf_report.generate_pdf(str(latest_json))
+
+    # Cost reports (new)
+    cost_report.generate(cost_findings)
