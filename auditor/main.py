@@ -228,3 +228,5 @@ if __name__ == "__main__":
 
     # Cost reports (new)
     cost_report.generate(cost_findings)
+    import generate_dashboard
+    generate_dashboard.generate_dashboard()

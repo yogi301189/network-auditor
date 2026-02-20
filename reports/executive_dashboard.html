@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetDevOps — Executive Security & Cost Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #09090f;
+    --surface:   #111118;
+    --surface2:  #18181f;
+    --border:    #23232e;
+    --red:       #ff3b5c;
+    --amber:     #ffb830;
+    --green:     #00e07f;
+    --blue:      #3b8bff;
+    --muted:     #52526a;
+    --text:      #e8e8f0;
+    --text-dim:  #8888a8;
+    --mono:      'DM Mono', monospace;
+    --display:   'Syne', sans-serif;
+    --body:      'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .logo-block { display: flex; flex-direction: column; gap: 6px; }
+
+  .logo-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--text) 0%, var(--text-dim) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .scan-time {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .account-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 4px;
+  }
+
+  /* ── STATUS BANNER ── */
+  .status-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 28px;
+    border-radius: 12px;
+    margin-bottom: 48px;
+    border: 1px solid;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .status-banner.critical {
+    background: rgba(255, 59, 92, 0.06);
+    border-color: rgba(255, 59, 92, 0.25);
+  }
+
+  .status-banner::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--red);
+    border-radius: 2px 0 0 2px;
+  }
+
+  .status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 12px var(--red);
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--red); }
+    50% { opacity: 0.6; box-shadow: 0 0 24px var(--red); }
+  }
+
+  .status-text {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--red);
+  }
+
+  .status-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── KPI GRID ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .kpi-card:hover {
+    border-color: var(--muted);
+    transform: translateY(-2px);
+  }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, var(--accent-color, transparent) 0%, transparent 60%);
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  .kpi-card.red   { --accent-color: var(--red); }
+  .kpi-card.amber { --accent-color: var(--amber); }
+  .kpi-card.green { --accent-color: var(--green); }
+  .kpi-card.blue  { --accent-color: var(--blue); }
+
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .kpi-value {
+    font-family: var(--display);
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .kpi-card.red   .kpi-value { color: var(--red); }
+  .kpi-card.amber .kpi-value { color: var(--amber); }
+  .kpi-card.green .kpi-value { color: var(--green); }
+  .kpi-card.blue  .kpi-value { color: var(--blue); }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* ── TWO COLUMN LAYOUT ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .panel-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .panel-body { padding: 8px 0; }
+
+  /* ── FINDING ROW ── */
+  .finding-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .finding-row:last-child { border-bottom: none; }
+  .finding-row:hover { background: var(--surface2); }
+
+  .sev-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .sev-dot.critical { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .sev-dot.warning  { background: var(--amber); }
+  .sev-dot.cost     { background: var(--blue); }
+
+  .finding-info { flex: 1; min-width: 0; }
+
+  .finding-rule {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+  }
+
+  .finding-resource {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .finding-detail {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  .finding-meta {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .region-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .cost-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue);
+    font-weight: 500;
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* ── COST BREAKDOWN TABLE ── */
+  .cost-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .cost-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 12px 24px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .cost-table td {
+    padding: 14px 24px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+
+  .cost-table tr:last-child td { border-bottom: none; }
+  .cost-table tr:hover td { background: var(--surface2); color: var(--text); }
+
+  .cost-table td:last-child {
+    font-family: var(--mono);
+    color: var(--blue);
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .cost-table tfoot td {
+    font-weight: 500;
+    color: var(--text);
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+  }
+
+  .cost-table tfoot td:last-child {
+    color: var(--red);
+    font-size: 15px;
+  }
+
+  /* ── RULE COVERAGE BAR ── */
+  .rule-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .rule-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  .rule-item:nth-child(even) { border-right: none; }
+  .rule-item:nth-last-child(-n+2) { border-bottom: none; }
+
+  .rule-status {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .rule-status.pass { background: rgba(0,224,127,0.15); color: var(--green); }
+  .rule-status.fail { background: rgba(255,59,92,0.15); color: var(--red); }
+  .rule-status.warn { background: rgba(255,184,48,0.15); color: var(--amber); }
+
+  .rule-name {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.3;
+  }
+
+  .rule-count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── ACCOUNT BREAKDOWN ── */
+  .account-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .account-row:last-child { border-bottom: none; }
+
+  .account-name {
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 140px;
+  }
+
+  .account-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--red), var(--amber));
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .account-tally {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .footer-note {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── ANIMATE IN ── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+  .kpi-card:nth-child(2) { animation-delay: 0.10s; }
+  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+  .kpi-card:nth-child(4) { animation-delay: 0.20s; }
+  .kpi-card:nth-child(5) { animation-delay: 0.25s; }
+
+  /* counter animation */
+  .count-up { display: inline-block; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header class="fade-up">
+    <div class="logo-block">
+      <span class="logo-tag">NetDevOps // Executive Report</span>
+      <h1>Security &amp; Cost Intelligence</h1>
+    </div>
+    <div class="header-meta">
+      <span class="scan-time" id="scanTime">Scan: 2026-02-19 16:59 UTC</span>
+      <span class="account-badge">Auditor: 222892837737 · Target: 278119224464</span>
+    </div>
+  </header>
+
+  <!-- STATUS BANNER -->
+  <div class="status-banner critical fade-up">
+    <div class="status-dot"></div>
+    <span class="status-text">ACTION REQUIRED — Critical violations detected</span>
+    <span class="status-sub">Last scan completed · 2 accounts · 16 active regions</span>
+  </div>
+
+  <!-- KPI GRID -->
+  <div class="section-label">Overview</div>
+  <div class="kpi-grid">
+    <div class="kpi-card red fade-up">
+      <div class="kpi-label">Critical</div>
+      <div class="kpi-value count-up" data-target="8">0</div>
+      <div class="kpi-sub">Require immediate action</div>
+    </div>
+    <div class="kpi-card amber fade-up">
+      <div class="kpi-label">Warnings</div>
+      <div class="kpi-value count-up" data-target="14">0</div>
+      <div class="kpi-sub">Review when possible</div>
+    </div>
+    <div class="kpi-card blue fade-up">
+      <div class="kpi-label">Monthly Waste</div>
+      <div class="kpi-value">$<span class="count-up" data-target="312">0</span></div>
+      <div class="kpi-sub">$3,744/year projected</div>
+    </div>
+    <div class="kpi-card amber fade-up">
+      <div class="kpi-label">Idle Resources</div>
+      <div class="kpi-value count-up" data-target="9">0</div>
+      <div class="kpi-sub">Not earning their cost</div>
+    </div>
+    <div class="kpi-card green fade-up">
+      <div class="kpi-label">Rules Passing</div>
+      <div class="kpi-value count-up" data-target="5">0</div>
+      <div class="kpi-sub">of 8 Golden Rules clean</div>
+    </div>
+  </div>
+
+  <!-- SECURITY + COST FINDINGS -->
+  <div class="two-col">
+
+    <!-- Critical Violations -->
+    <div class="panel fade-up">
+      <div class="panel-header">
+        <span class="panel-title">🔴 Critical Violations</span>
+        <span class="panel-count">8 findings</span>
+      </div>
+      <div class="panel-body">
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_open_ssh_rdp</div>
+            <div class="finding-resource">sg-0a1b2c3d4e5f</div>
+            <div class="finding-detail">Allows IPv4 0.0.0.0/0 on port 22 (SSH)</div>
+          </div>
+          <div class="finding-meta"><span class="region-tag">eu-west-1</span></div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_open_ssh_rdp</div>
+            <div class="finding-resource">sg-0f9e8d7c6b5a</div>
+            <div class="finding-detail">Allows IPv4 0.0.0.0/0 on port 3389 (RDP)</div>
+          </div>
+          <div class="finding-meta"><span class="region-tag">us-east-1</span></div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_public_s3_buckets</div>
+            <div class="finding-resource">prod-data-bucket-278</div>
+            <div class="finding-detail">BlockPublicAcls, IgnorePublicAcls disabled</div>
+          </div>
+          <div class="finding-meta"><span class="region-tag">eu-west-1</span></div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_public_rds</div>
+            <div class="finding-resource">prod-mysql-primary</div>
+            <div class="finding-detail">RDS instance (mysql) PubliclyAccessible=True</div>
+          </div>
+          <div class="finding-meta"><span class="region-tag">eu-west-1</span></div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">ec2_imdsv2_required</div>
+            <div class="finding-resource">i-0abc123def456789</div>
+            <div class="finding-detail">Instance 'web-server-01' allows IMDSv1 — SSRF risk</div>
+          </div>
+          <div class="finding-meta"><span class="region-tag">eu-west-1</span></div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">ec2_imdsv2_required</div>
+            <div class="finding-resource">i-0def456abc789012</div>
+            <div class="finding-detail">Instance 'api-gateway-02' allows IMDSv1 — SSRF risk</div>
+          </div>
+          <div class="finding-meta"><span class="region-tag">us-east-1</span></div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_public_s3_buckets</div>
+            <div class="finding-resource">staging-assets-bucket</div>
+            <div class="finding-detail">No Block Public Access configuration</div>
+          </div>
+          <div class="finding-meta"><span class="region-tag">us-east-1</span></div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_open_ssh_rdp</div>
+            <div class="finding-resource">sg-0c1d2e3f4a5b</div>
+            <div class="finding-detail">Allows IPv6 ::/0 on port 22 (SSH)</div>
+          </div>
+          <div class="finding-meta"><span class="region-tag">ap-southeast-1</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cost Waste -->
+    <div class="panel fade-up">
+      <div class="panel-header">
+        <span class="panel-title">💸 Cost Waste</span>
+        <span class="panel-count">$312/month</span>
+      </div>
+      <div class="panel-body">
+        <table class="cost-table">
+          <thead>
+            <tr>
+              <th>Resource</th>
+              <th>Type</th>
+              <th>Region</th>
+              <th>$/mo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>nat-0a1b2c3d4e</td>
+              <td style="color:var(--text-dim)">Idle NAT GW</td>
+              <td><span class="region-tag">eu-west-1a</span></td>
+              <td>$37.00</td>
+            </tr>
+            <tr>
+              <td>nat-0f9e8d7c6b</td>
+              <td style="color:var(--text-dim)">Idle NAT GW</td>
+              <td><span class="region-tag">eu-west-1b</span></td>
+              <td>$37.00</td>
+            </tr>
+            <tr>
+              <td>app/old-staging-lb</td>
+              <td style="color:var(--text-dim)">Idle ALB</td>
+              <td><span class="region-tag">eu-west-1</span></td>
+              <td>$18.00</td>
+            </tr>
+            <tr>
+              <td>app/test-lb-unused</td>
+              <td style="color:var(--text-dim)">Idle ALB</td>
+              <td><span class="region-tag">us-east-1</span></td>
+              <td>$18.00</td>
+            </tr>
+            <tr>
+              <td>vol-0abc123 (120GB gp2)</td>
+              <td style="color:var(--text-dim)">Unattached EBS</td>
+              <td><span class="region-tag">eu-west-1</span></td>
+              <td>$12.00</td>
+            </tr>
+            <tr>
+              <td>vol-0def456 (200GB gp2)</td>
+              <td style="color:var(--text-dim)">Unattached EBS</td>
+              <td><span class="region-tag">eu-west-1</span></td>
+              <td>$20.00</td>
+            </tr>
+            <tr>
+              <td>eip-0a1b · 54.72.18.44</td>
+              <td style="color:var(--text-dim)">Ghost EIP</td>
+              <td><span class="region-tag">eu-west-1</span></td>
+              <td>$3.65</td>
+            </tr>
+            <tr>
+              <td>i-0stopped123 (web-old)</td>
+              <td style="color:var(--text-dim)">Stopped EC2</td>
+              <td><span class="region-tag">eu-west-1</span></td>
+              <td>$8.00</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3"><strong>Total Monthly Waste</strong></td>
+              <td><strong>$153.65</strong></td>
+            </tr>
+            <tr>
+              <td colspan="3" style="color:var(--muted);font-size:11px">Annual projection</td>
+              <td style="color:var(--amber);font-size:12px">$1,843.80/yr</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- GOLDEN RULES STATUS + ACCOUNT BREAKDOWN -->
+  <div class="two-col">
+
+    <!-- Golden Rules -->
+    <div class="panel fade-up">
+      <div class="panel-header">
+        <span class="panel-title">Golden Rules Coverage</span>
+        <span class="panel-count">5 / 8 passing</span>
+      </div>
+      <div class="rule-grid">
+        <div class="rule-item">
+          <div class="rule-status fail">✗</div>
+          <div class="rule-name">No open SSH/RDP</div>
+          <div class="rule-count" style="color:var(--red)">3</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-status pass">✓</div>
+          <div class="rule-name">Required VPC tags</div>
+          <div class="rule-count" style="color:var(--green)">0</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-status fail">✗</div>
+          <div class="rule-name">No public RDS</div>
+          <div class="rule-count" style="color:var(--red)">1</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-status warn">!</div>
+          <div class="rule-name">No orphaned EIPs</div>
+          <div class="rule-count" style="color:var(--amber)">2</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-status fail">✗</div>
+          <div class="rule-name">No public S3</div>
+          <div class="rule-count" style="color:var(--red)">2</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-status pass">✓</div>
+          <div class="rule-name">S3 encryption</div>
+          <div class="rule-count" style="color:var(--green)">0</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-status pass">✓</div>
+          <div class="rule-name">EBS encryption</div>
+          <div class="rule-count" style="color:var(--green)">0</div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-status fail">✗</div>
+          <div class="rule-name">EC2 IMDSv2</div>
+          <div class="rule-count" style="color:var(--red)">2</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Breakdown -->
+    <div class="panel fade-up">
+      <div class="panel-header">
+        <span class="panel-title">Account Breakdown</span>
+        <span class="panel-count">2 accounts</span>
+      </div>
+      <div class="panel-body">
+        <div class="account-row">
+          <div>
+            <div class="account-name">Auditor Account</div>
+            <div class="account-id">222892837737</div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: 45%"></div>
+          </div>
+          <div class="account-tally">9 issues</div>
+        </div>
+        <div class="account-row">
+          <div>
+            <div class="account-name">Target Account</div>
+            <div class="account-id">278119224464</div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: 85%"></div>
+          </div>
+          <div class="account-tally">17 issues</div>
+        </div>
+
+        <!-- Severity breakdown -->
+        <div style="padding: 20px 24px; border-top: 1px solid var(--border); margin-top: 8px;">
+          <div class="section-label" style="margin-bottom: 16px;">Severity breakdown</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="flex:1; background:rgba(255,59,92,0.08); border:1px solid rgba(255,59,92,0.2); border-radius:8px; padding:14px; text-align:center;">
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--red)">8</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Critical</div>
+            </div>
+            <div style="flex:1; background:rgba(255,184,48,0.08); border:1px solid rgba(255,184,48,0.2); border-radius:8px; padding:14px; text-align:center;">
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--amber)">14</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Warning</div>
+            </div>
+            <div style="flex:1; background:rgba(59,139,255,0.08); border:1px solid rgba(59,139,255,0.2); border-radius:8px; padding:14px; text-align:center;">
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--blue)">9</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Waste</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Regions scanned -->
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border);">
+          <div class="section-label" style="margin-bottom:12px;">Regions scanned</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <span class="region-tag">eu-west-1</span>
+            <span class="region-tag">us-east-1</span>
+            <span class="region-tag">us-west-2</span>
+            <span class="region-tag">ap-southeast-1</span>
+            <span class="region-tag">ap-northeast-1</span>
+            <span class="region-tag">eu-central-1</span>
+            <span class="region-tag" style="color:var(--muted)">+10 more</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="fade-up">
+    <div class="footer-brand">
+      NetDevOps Self-Healing Platform · github.com/yogi301189/network-auditor
+    </div>
+    <div class="footer-note">
+      Read-only scan · No changes made · Auto-remediation runs separately via Lambda
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  // ── COUNT-UP ANIMATION ────────────────────────────────────────────
+  function animateCount(el) {
+    const target = parseInt(el.dataset.target, 10);
+    const duration = 1200;
+    const start = performance.now();
+    function update(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * target);
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }
+
+  // ── INTERSECTION OBSERVER — trigger on scroll ─────────────────────
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.count-up').forEach(animateCount);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.kpi-grid').forEach(el => observer.observe(el));
+
+  // ── SET SCAN TIME ─────────────────────────────────────────────────
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('scanTime').textContent =
+    `Scan: ${now.getUTCFullYear()}-${pad(now.getUTCMonth()+1)}-${pad(now.getUTCDate())} ` +
+    `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())} UTC`;
+</script>
+
+</body>
+</html>
