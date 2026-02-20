@@ -10,9 +10,12 @@
 name: Network Audit
 
 on:
-  schedule:
-    - cron: "0 6 * * *"   # 06:00 UTC daily — adjust to your timezone if needed
-  workflow_dispatch:        # enables the manual "Run workflow" button in GitHub UI
+   push:
+     branches: [main]
+   schedule:
+     - cron: '0 6 * * *'       #existing daily security scan at 6am
+     - cron: '0 8 * * 1'       #new: weekly cost scan every Monday 8am  # 06:00 UTC daily — adjust to your timezone if needed
+   workflow_dispatch:        # enables the manual "Run workflow" button in GitHub UI
 
 # Only allow one audit to run at a time.
 # If a scan is already running and a new one triggers, the new one waits.
@@ -123,3 +126,89 @@ jobs:
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d "{\"text\": \"$SUMMARY\"}"
+  cost-audit:
+    name: Cost Waste Scan
+    runs-on: ubuntu-latest
+    # Run weekly on Monday mornings — cost waste doesn't change hourly
+    # Also runs on every push to main so you see it in PRs
+    if: github.event_name == 'push' || github.event.schedule == '0 8 * * 1'
+
+    permissions:
+      id-token: write   # needed for OIDC auth to AWS
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials (Auditor account)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_AUDIT_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Run Cost Optimizer
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PYTHONPATH: .
+        run: |
+          python - <<'EOF'
+          import json, boto3
+          from pathlib import Path
+          from auditor import cost_optimizer, cost_report
+
+          # Load accounts
+          with open("accounts.json") as f:
+              accounts = json.load(f)
+
+          all_cost_findings = []
+
+          for account in accounts:
+              role_arn = account.get("role_arn")
+              if role_arn:
+                  sts = boto3.client("sts")
+                  creds = sts.assume_role(
+                      RoleArn=role_arn,
+                      RoleSessionName=f"CostAudit-{account['account_id']}"
+                  )["Credentials"]
+                  session = boto3.Session(
+                      aws_access_key_id=creds["AccessKeyId"],
+                      aws_secret_access_key=creds["SecretAccessKey"],
+                      aws_session_token=creds["SessionToken"],
+                  )
+              else:
+                  session = boto3.Session()
+
+              ec2 = session.client("ec2", region_name="us-east-1")
+              regions = [r["RegionName"] for r in ec2.describe_regions(
+                  Filters=[{"Name": "opt-in-status", "Values": ["opt-in-not-required", "opted-in"]}]
+              )["Regions"]]
+
+              for region in regions:
+                  for check in cost_optimizer.COST_CHECKS:
+                      try:
+                          findings = check(region, session=session)
+                          for f in findings:
+                              f["account_id"]   = account["account_id"]
+                              f["account_name"] = account["account_name"]
+                          all_cost_findings.extend(findings)
+                      except Exception as e:
+                          print(f"[WARN] {check.__name__} failed in {region}: {e}")
+
+          cost_report.generate(all_cost_findings)
+          EOF
+
+      - name: Upload cost waste reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost-waste-reports-${{ github.run_number }}
+          path: reports/cost_waste_*
+          retention-days: 90   # keep 3 months of cost history

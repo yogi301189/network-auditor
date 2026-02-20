@@ -319,4 +319,4 @@ Runs entirely within AWS and GitHub free tiers.
 
 ---
 
-*Built as part of the NetDevOps Migration and Modernization project — 2026.*
+*Built as part of the NetDevOps Migration and Modernization project — 2026.*c

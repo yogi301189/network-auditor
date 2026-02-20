@@ -14,3 +14,13 @@ variable "slack_webhook_url" {
   type        = string
   sensitive   = true   # prevents the URL from appearing in terraform plan output
 }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DRIFT DETECTION — append these to infra/variables.tf
+# ══════════════════════════════════════════════════════════════════════════════
+
+variable "auditor_account_id" {
+  description = "AWS Account ID of the Auditor (Account A)"
+  type        = string
+  default     = "222892837737"
+}

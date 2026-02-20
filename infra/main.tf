@@ -352,6 +352,58 @@ resource "aws_cloudwatch_dashboard" "network_auditor" {
           region  = var.aws_region
         }
       },
+      #── Drift Detected Over Time ──
+      {
+        type   = "metric"
+        x      = 0
+        y      = 12
+        width  = 12
+        height = 6
+        properties = {
+          title   = "🔵 Drift Events Detected"
+          view    = "timeSeries"
+          period  = 300
+          stat    = "Sum"
+          region  = var.aws_region
+          metrics = [["NetDevOps/DriftDetection", "DriftDetected", { label = "Drift Events", color = "0073bb" }]]
+          yAxis   = { left = { min = 0 } }
+        }
+      },
+
+       #── Drift Auto-Remediations ──
+      {
+        type   = "metric"
+        x      = 12
+        y      = 12
+        width  = 12
+        height = 6
+        properties = {
+          title   = "✅ Drift Auto-Remediations"
+          view    = "timeSeries"
+          period  = 300
+          stat    = "Sum"
+          region  = var.aws_region
+          metrics = [["NetDevOps/DriftDetection", "DriftRemediated", { label = "Remediated", color = "1d8102" }]]
+          yAxis   = { left = { min = 0 } }
+        }
+      },
+
+       #── Drift Lambda Logs ──
+      {
+        type   = "log"
+        x      = 0
+        y      = 18
+        width  = 24
+        height = 6
+        properties = {
+          title  = "📋 Drift Detection Log"
+          view   = "table"
+          period = 86400
+          query  = "SOURCE '/aws/lambda/NetworkAuditorDriftHandler' | fields @timestamp, @message | filter @message like /DRIFT/ | sort @timestamp desc | limit 20"
+          region = var.aws_region
+        }
+      },
+
     ]
   })
 }
@@ -377,4 +429,228 @@ output "eventbridge_rule_name" {
 output "dashboard_url" {
   value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.network_auditor.dashboard_name}"
   description = "Direct URL to the CloudWatch dashboard"
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DRIFT DETECTION — AUDITOR ACCOUNT (222892837737)
+# Append this block to the bottom of infra/main.tf
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+# ── PACKAGE THE DRIFT LAMBDA ──────────────────────────────────────────────────
+
+data "archive_file" "drift_lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/drift_handler.py"
+  output_path = "${path.module}/lambda/drift_handler.zip"
+}
+
+
+# ── IAM POLICY ADDITIONS FOR EXISTING LAMBDA ROLE ────────────────────────────
+# Extends the existing aws_iam_role.lambda_role with drift-specific permissions.
+# SSM to fetch Slack webhook, STS to assume role in Account B for remediation,
+# CloudTrail to look up who made the change.
+
+resource "aws_iam_role_policy" "lambda_drift_permissions" {
+  name = "NetworkAuditorDriftPermissions"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "SSMGetSlackWebhook"
+        Effect = "Allow"
+        Action = ["ssm:GetParameter"]
+        Resource = "arn:aws:ssm:${var.aws_region}:${var.auditor_account_id}:parameter/netdevops/*"
+      },
+      {
+        Sid    = "AssumeRemediationRoleInAccountB"
+        Effect = "Allow"
+        Action = ["sts:AssumeRole"]
+        Resource = "arn:aws:iam::278119224464:role/NetworkAuditorDriftRemediationRole"
+      },
+      {
+        Sid    = "CloudTrailLookup"
+        Effect = "Allow"
+        Action = ["cloudtrail:LookupEvents"]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+
+# ── SSM PARAMETER — SLACK WEBHOOK ─────────────────────────────────────────────
+# Stores the webhook URL securely instead of passing it as a plain env var.
+# drift_handler.py reads this at runtime via boto3.
+
+resource "aws_ssm_parameter" "slack_webhook" {
+  name  = "/netdevops/slack-webhook-url"
+  type  = "SecureString"
+  value = var.slack_webhook_url
+
+  lifecycle {
+    ignore_changes = [value]  # Don't overwrite if manually rotated
+  }
+}
+
+
+# ── DRIFT DETECTION LAMBDA ────────────────────────────────────────────────────
+
+resource "aws_lambda_function" "drift_handler" {
+  function_name = "NetworkAuditorDriftHandler"
+  description   = "Detects Config drift, looks up actor via CloudTrail, auto-remediates, alerts Slack"
+
+  filename         = data.archive_file.drift_lambda_zip.output_path
+  source_code_hash = data.archive_file.drift_lambda_zip.output_base64sha256
+
+  handler = "drift_handler.lambda_handler"
+  runtime = "python3.12"
+  timeout = 60  # Longer than sg_detector — needs CloudTrail + STS + remediation
+
+  role = aws_iam_role.lambda_role.arn  # Reuse existing role (now extended above)
+
+  environment {
+    variables = {
+      SLACK_WEBHOOK_PARAM  = "/netdevops/slack-webhook-url"
+      TARGET_ACCOUNT_ID    = "278119224464"
+      REMEDIATION_ROLE_ARN = "arn:aws:iam::278119224464:role/NetworkAuditorDriftRemediationRole"
+      AWS_REGION_NAME      = var.aws_region
+    }
+  }
+}
+
+resource "aws_cloudwatch_log_group" "drift_lambda_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.drift_handler.function_name}"
+  retention_in_days = 30
+}
+
+
+# ── CONFIG AGGREGATOR ─────────────────────────────────────────────────────────
+# Pulls compliance data from Account B into Auditor account.
+# Gives you a single-pane-of-glass compliance view across both accounts.
+
+resource "aws_config_configuration_aggregator" "main" {
+  name = "NetworkAuditorAggregator"
+
+  account_aggregation_source {
+    account_ids = ["278119224464"]
+    regions     = [var.aws_region]
+  }
+}
+
+
+# ── EVENTBRIDGE — DRIFT EVENTS FROM CENTRAL BUS → DRIFT LAMBDA ───────────────
+# Config drift events from Account B arrive on NetworkAuditorCentral bus
+# (already exists above). This rule picks them up and sends to drift Lambda.
+
+resource "aws_cloudwatch_event_rule" "drift_to_lambda" {
+  name           = "NetworkAuditorDriftToLambda"
+  description    = "Routes Config NON_COMPLIANT events to the drift handler Lambda"
+  event_bus_name = aws_cloudwatch_event_bus.central.name  # Already exists in main.tf
+
+  event_pattern = jsonencode({
+    source      = ["aws.config"]
+    detail-type = ["Config Rules Compliance Change"]
+    detail = {
+      newEvaluationResult = {
+        complianceType = ["NON_COMPLIANT"]
+      }
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "drift_to_lambda_target" {
+  rule           = aws_cloudwatch_event_rule.drift_to_lambda.name
+  event_bus_name = aws_cloudwatch_event_bus.central.name
+  arn            = aws_lambda_function.drift_handler.arn
+}
+
+resource "aws_lambda_permission" "allow_central_bus_drift" {
+  statement_id  = "AllowCentralBusDriftInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.drift_handler.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.drift_to_lambda.arn
+}
+
+
+# ── CLOUDWATCH DASHBOARD — DRIFT WIDGETS ──────────────────────────────────────
+# Add these 3 widgets to your existing NetworkAuditor dashboard.
+# Copy the widget blocks below into the widgets = [ ... ] list
+# inside the existing aws_cloudwatch_dashboard.network_auditor resource.
+#
+# ┌─────────────────────────────────────────────────────────────────────┐
+# │  PASTE INSIDE widgets = [ ] IN THE EXISTING DASHBOARD RESOURCE:     │
+# └─────────────────────────────────────────────────────────────────────┘
+#
+#      # ── Drift Detected Over Time ──
+#      {
+#        type   = "metric"
+#        x      = 0
+#        y      = 12
+#        width  = 12
+#        height = 6
+#        properties = {
+#          title   = "🔵 Drift Events Detected"
+#          view    = "timeSeries"
+#          period  = 300
+#          stat    = "Sum"
+#          region  = var.aws_region
+#          metrics = [["NetDevOps/DriftDetection", "DriftDetected", { label = "Drift Events", color = "#0073bb" }]]
+#          yAxis   = { left = { min = 0 } }
+#        }
+#      },
+#
+#      # ── Drift Auto-Remediations ──
+#      {
+#        type   = "metric"
+#        x      = 12
+#        y      = 12
+#        width  = 12
+#        height = 6
+#        properties = {
+#          title   = "✅ Drift Auto-Remediations"
+#          view    = "timeSeries"
+#          period  = 300
+#          stat    = "Sum"
+#          region  = var.aws_region
+#          metrics = [["NetDevOps/DriftDetection", "DriftRemediated", { label = "Remediated", color = "#1d8102" }]]
+#          yAxis   = { left = { min = 0 } }
+#        }
+#      },
+#
+#      # ── Drift Lambda Logs ──
+#      {
+#        type   = "log"
+#        x      = 0
+#        y      = 18
+#        width  = 24
+#        height = 6
+#        properties = {
+#          title  = "📋 Drift Detection Log"
+#          view   = "table"
+#          period = 86400
+#          query  = "SOURCE '/aws/lambda/NetworkAuditorDriftHandler' | fields @timestamp, @message | filter @message like /DRIFT/ | sort @timestamp desc | limit 20"
+#          region = var.aws_region
+#        }
+#      },
+
+
+# ── OUTPUTS ───────────────────────────────────────────────────────────────────
+
+output "drift_lambda_function_name" {
+  value       = aws_lambda_function.drift_handler.function_name
+  description = "Name of the drift detection Lambda"
+}
+
+output "drift_lambda_arn" {
+  value       = aws_lambda_function.drift_handler.arn
+  description = "ARN of the drift detection Lambda"
+}
+
+output "config_aggregator_arn" {
+  value       = aws_config_configuration_aggregator.main.arn
+  description = "ARN of the Config aggregator pulling compliance from Account B"
 }
