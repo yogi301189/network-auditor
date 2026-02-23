@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "generated_at": "2026-02-23_08-43-50",
+    "total_findings": 1,
+    "critical_count": 1,
+    "warning_count": 0
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-06b9d37f0474f1637",
+      "region": "ap-south-1",
+      "detail": "SG 'basic ssh' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    }
+  ]
+}
