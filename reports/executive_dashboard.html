@@ -112,27 +112,27 @@
       <h1>Security &amp; Cost Intelligence</h1>
     </div>
     <div class="header-meta">
-      <span class="scan-time">Scan: 2026-04-01 07:47 UTC</span>
-      <span class="account-badge">278119224464</span>
+      <span class="scan-time">Scan: 2026-04-02 07:25 UTC</span>
+      <span class="account-badge">222892837737 · 278119224464</span>
     </div>
   </header>
 
   <div class="status-banner critical">
     <div class="status-dot"></div>
-    <span class="status-text">ACTION REQUIRED — 1 critical violation(s) detected</span>
-    <span class="status-sub">1 account(s) · 1 region(s) scanned</span>
+    <span class="status-text">ACTION REQUIRED — 4 critical violation(s) detected</span>
+    <span class="status-sub">2 account(s) · 1 region(s) scanned</span>
   </div>
 
   <div class="section-label">Overview</div>
   <div class="kpi-grid">
     <div class="kpi-card red">
       <div class="kpi-label">Critical</div>
-      <div class="kpi-value">1</div>
+      <div class="kpi-value">4</div>
       <div class="kpi-sub">Require immediate action</div>
     </div>
     <div class="kpi-card amber">
       <div class="kpi-label">Warnings</div>
-      <div class="kpi-value">0</div>
+      <div class="kpi-value">3</div>
       <div class="kpi-sub">Review when possible</div>
     </div>
     <div class="kpi-card blue">
@@ -147,7 +147,7 @@
     </div>
     <div class="kpi-card green">
       <div class="kpi-label">Rules Passing</div>
-      <div class="kpi-value">7</div>
+      <div class="kpi-value">5</div>
       <div class="kpi-sub">of 8 Golden Rules clean</div>
     </div>
   </div>
@@ -156,9 +156,31 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">🔴 Critical Violations</span>
-        <span class="panel-count">1 findings</span>
+        <span class="panel-count">4 findings</span>
       </div>
       <div class="panel-body">
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_open_ssh_rdp</div>
+            <div class="finding-resource">sg-07fcd5d72b2e70832</div>
+            <div class="finding-detail">SG 'all tcp' allows IPv4 0.0.0.0/0 on port 22, port 3389 · Auditor (Primary)</div>
+          </div>
+          <div class="finding-meta">
+            <span class="region-tag">ap-south-1</span>
+          </div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_open_ssh_rdp</div>
+            <div class="finding-resource">sg-07fcd5d72b2e70832</div>
+            <div class="finding-detail">SG 'all tcp' allows IPv4 0.0.0.0/0 on port 22 · Auditor (Primary)</div>
+          </div>
+          <div class="finding-meta">
+            <span class="region-tag">ap-south-1</span>
+          </div>
+        </div>
         <div class="finding-row">
           <div class="sev-dot critical"></div>
           <div class="finding-info">
@@ -169,15 +191,59 @@
           <div class="finding-meta">
             <span class="region-tag">ap-south-1</span>
           </div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot critical"></div>
+          <div class="finding-info">
+            <div class="finding-rule">no_open_ssh_rdp</div>
+            <div class="finding-resource">sg-0df64d81ba01d2d13</div>
+            <div class="finding-detail">SG 'terraform-20260402071523949000000001' allows IPv4 0.0.0.0/0 on port 22 · Target (Secondary)</div>
+          </div>
+          <div class="finding-meta">
+            <span class="region-tag">ap-south-1</span>
+          </div>
         </div></div>
     </div>
 
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">🟡 Warnings</span>
-        <span class="panel-count">0 findings</span>
+        <span class="panel-count">3 findings</span>
       </div>
-      <div class="panel-body"><div style="padding:24px;color:var(--muted);font-size:13px;">✅ No critical violations found.</div></div>
+      <div class="panel-body">
+        <div class="finding-row">
+          <div class="sev-dot warning"></div>
+          <div class="finding-info">
+            <div class="finding-rule">ebs_encryption_enabled</div>
+            <div class="finding-resource">vol-09bc37cb18387c3c2</div>
+            <div class="finding-detail">EBS volume unencrypted (state: in-use, instance: i-082d9289089a205b1) · Auditor (Primary)</div>
+          </div>
+          <div class="finding-meta">
+            <span class="region-tag">ap-south-1</span>
+          </div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot warning"></div>
+          <div class="finding-info">
+            <div class="finding-rule">required_vpc_tags</div>
+            <div class="finding-resource">vpc-0a9042aaf342a5e1a</div>
+            <div class="finding-detail">Missing required tags: CostCenter, Environment, Owner, Project · Target (Secondary)</div>
+          </div>
+          <div class="finding-meta">
+            <span class="region-tag">ap-south-1</span>
+          </div>
+        </div>
+        <div class="finding-row">
+          <div class="sev-dot warning"></div>
+          <div class="finding-info">
+            <div class="finding-rule">ebs_encryption_enabled</div>
+            <div class="finding-resource">vol-0d3b139d6e72c8f32</div>
+            <div class="finding-detail">EBS volume unencrypted (state: in-use, instance: i-032ee148995934e43) · Target (Secondary)</div>
+          </div>
+          <div class="finding-meta">
+            <span class="region-tag">ap-south-1</span>
+          </div>
+        </div></div>
     </div>
   </div>
 
@@ -213,18 +279,18 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">Golden Rules Coverage</span>
-        <span class="panel-count">7 / 8 passing</span>
+        <span class="panel-count">5 / 8 passing</span>
       </div>
       <div class="rule-grid">
         <div class="rule-item">
           <div class="rule-status fail">✗</div>
           <div class="rule-name">No open SSH/RDP</div>
-          <div class="rule-count" style="color:var(--red)">1</div>
+          <div class="rule-count" style="color:var(--red)">4</div>
         </div>
         <div class="rule-item">
-          <div class="rule-status pass">✓</div>
+          <div class="rule-status warn">!</div>
           <div class="rule-name">Required VPC tags</div>
-          <div class="rule-count" style="color:var(--green)">0</div>
+          <div class="rule-count" style="color:var(--amber)">1</div>
         </div>
         <div class="rule-item">
           <div class="rule-status pass">✓</div>
@@ -247,9 +313,9 @@
           <div class="rule-count" style="color:var(--green)">0</div>
         </div>
         <div class="rule-item">
-          <div class="rule-status pass">✓</div>
+          <div class="rule-status warn">!</div>
           <div class="rule-name">EBS encryption</div>
-          <div class="rule-count" style="color:var(--green)">0</div>
+          <div class="rule-count" style="color:var(--amber)">2</div>
         </div>
         <div class="rule-item">
           <div class="rule-status pass">✓</div>
@@ -263,10 +329,20 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">Account Breakdown</span>
-        <span class="panel-count">1 accounts</span>
+        <span class="panel-count">2 accounts</span>
       </div>
       <div class="panel-body">
         
+        <div class="account-row">
+          <div>
+            <div class="account-name">Auditor (Primary)</div>
+            <div class="account-id">222892837737</div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:75%"></div>
+          </div>
+          <div class="account-tally">3 issues</div>
+        </div>
         <div class="account-row">
           <div>
             <div class="account-name">Target (Secondary)</div>
@@ -275,17 +351,17 @@
           <div class="bar-track">
             <div class="bar-fill" style="width:100%"></div>
           </div>
-          <div class="account-tally">1 issues</div>
+          <div class="account-tally">4 issues</div>
         </div>
         <div style="padding:20px 24px;border-top:1px solid var(--border)">
           <div class="section-label" style="margin-bottom:16px">Severity breakdown</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <div style="flex:1;background:rgba(255,59,92,0.08);border:1px solid rgba(255,59,92,0.2);border-radius:8px;padding:14px;text-align:center">
-              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--red)">1</div>
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--red)">4</div>
               <div style="font-size:11px;color:var(--muted);margin-top:4px">Critical</div>
             </div>
             <div style="flex:1;background:rgba(255,184,48,0.08);border:1px solid rgba(255,184,48,0.2);border-radius:8px;padding:14px;text-align:center">
-              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--amber)">0</div>
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--amber)">3</div>
               <div style="font-size:11px;color:var(--muted);margin-top:4px">Warning</div>
             </div>
             <div style="flex:1;background:rgba(59,139,255,0.08);border:1px solid rgba(59,139,255,0.2);border-radius:8px;padding:14px;text-align:center">

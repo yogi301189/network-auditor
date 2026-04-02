@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "generated_at": "2026-04-02_07-25-30",
+    "total_findings": 7,
+    "critical_count": 4,
+    "warning_count": 3
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-07fcd5d72b2e70832",
+      "region": "ap-south-1",
+      "detail": "SG 'all tcp' allows IPv4 0.0.0.0/0 on port 22, port 3389",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-07fcd5d72b2e70832",
+      "region": "ap-south-1",
+      "detail": "SG 'all tcp' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-06b9d37f0474f1637",
+      "region": "ap-south-1",
+      "detail": "SG 'basic ssh' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-0df64d81ba01d2d13",
+      "region": "ap-south-1",
+      "detail": "SG 'terraform-20260402071523949000000001' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "ebs_encryption_enabled",
+      "resource_id": "vol-09bc37cb18387c3c2",
+      "region": "ap-south-1",
+      "detail": "EBS volume unencrypted (state: in-use, instance: i-082d9289089a205b1)",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "required_vpc_tags",
+      "resource_id": "vpc-0a9042aaf342a5e1a",
+      "region": "ap-south-1",
+      "detail": "Missing required tags: CostCenter, Environment, Owner, Project",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "ebs_encryption_enabled",
+      "resource_id": "vol-0d3b139d6e72c8f32",
+      "region": "ap-south-1",
+      "detail": "EBS volume unencrypted (state: in-use, instance: i-032ee148995934e43)",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    }
+  ]
+}
