@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "generated_at": "2026-04-06_09-05-10",
+    "total_findings": 3,
+    "critical_count": 3,
+    "warning_count": 0
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-07fcd5d72b2e70832",
+      "region": "ap-south-1",
+      "detail": "SG 'all tcp' allows IPv4 0.0.0.0/0 on port 22, port 3389",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-07fcd5d72b2e70832",
+      "region": "ap-south-1",
+      "detail": "SG 'all tcp' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-06b9d37f0474f1637",
+      "region": "ap-south-1",
+      "detail": "SG 'basic ssh' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    }
+  ]
+}
