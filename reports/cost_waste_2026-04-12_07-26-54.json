@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "generated_at": "2026-04-12_07-26-54",
+    "total_findings": 2,
+    "total_monthly_usd": 1.0,
+    "total_annual_usd": 12.0
+  },
+  "findings": [
+    {
+      "severity": "COST_WASTE",
+      "rule": "unattached_ebs_volume",
+      "resource_id": "vol-0ee9fd228fb56bc12",
+      "region": "ap-south-1",
+      "detail": "EBS volume 'observability-cluster-dynamic-pvc-38b135cb-b722-422f-af9b-3329957be033' (gp2, 8GB) unattached for 0 days \u2014 not mounted to any instance",
+      "monthly_cost_usd": 0.8,
+      "annual_cost_usd": 9.6,
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "COST_WASTE",
+      "rule": "unattached_ebs_volume",
+      "resource_id": "vol-0c841d24865960886",
+      "region": "ap-south-1",
+      "detail": "EBS volume 'observability-cluster-dynamic-pvc-9542b8de-65b2-4078-9bcd-201c6ba87d66' (gp2, 2GB) unattached for 0 days \u2014 not mounted to any instance",
+      "monthly_cost_usd": 0.2,
+      "annual_cost_usd": 2.4,
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    }
+  ]
+}
