@@ -112,7 +112,7 @@
       <h1>Security &amp; Cost Intelligence</h1>
     </div>
     <div class="header-meta">
-      <span class="scan-time">Scan: 2026-04-12 07:26 UTC</span>
+      <span class="scan-time">Scan: 2026-04-13 08:16 UTC</span>
       <span class="account-badge">222892837737 · 278119224464</span>
     </div>
   </header>
@@ -132,22 +132,22 @@
     </div>
     <div class="kpi-card amber">
       <div class="kpi-label">Warnings</div>
-      <div class="kpi-value">5</div>
+      <div class="kpi-value">4</div>
       <div class="kpi-sub">Review when possible</div>
     </div>
     <div class="kpi-card blue">
       <div class="kpi-label">Monthly Waste</div>
-      <div class="kpi-value">$1.00</div>
-      <div class="kpi-sub">$12.00/year projected</div>
+      <div class="kpi-value">$2.00</div>
+      <div class="kpi-sub">$24.00/year projected</div>
     </div>
     <div class="kpi-card amber">
       <div class="kpi-label">Idle Resources</div>
-      <div class="kpi-value">2</div>
+      <div class="kpi-value">4</div>
       <div class="kpi-sub">Not earning their cost</div>
     </div>
     <div class="kpi-card green">
       <div class="kpi-label">Rules Passing</div>
-      <div class="kpi-value">4</div>
+      <div class="kpi-value">6</div>
       <div class="kpi-sub">of 8 Golden Rules clean</div>
     </div>
   </div>
@@ -197,26 +197,15 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">🟡 Warnings</span>
-        <span class="panel-count">5 findings</span>
+        <span class="panel-count">4 findings</span>
       </div>
       <div class="panel-body">
         <div class="finding-row">
           <div class="sev-dot warning"></div>
           <div class="finding-info">
-            <div class="finding-rule">required_vpc_tags</div>
-            <div class="finding-resource">vpc-0fe0402ed038dca9d</div>
-            <div class="finding-detail">Missing required tags: CostCenter, Owner · Auditor (Primary)</div>
-          </div>
-          <div class="finding-meta">
-            <span class="region-tag">ap-south-1</span>
-          </div>
-        </div>
-        <div class="finding-row">
-          <div class="sev-dot warning"></div>
-          <div class="finding-info">
-            <div class="finding-rule">no_orphaned_eips</div>
-            <div class="finding-resource">eipalloc-06e83e2692b73e114</div>
-            <div class="finding-detail">Elastic IP 13.126.79.64 is not associated with any resource · Auditor (Primary)</div>
+            <div class="finding-rule">ebs_encryption_enabled</div>
+            <div class="finding-resource">vol-0e9e34a6c871635cb</div>
+            <div class="finding-detail">EBS volume unencrypted (state: available, instance: not attached) · Auditor (Primary)</div>
           </div>
           <div class="finding-meta">
             <span class="region-tag">ap-south-1</span>
@@ -248,8 +237,8 @@
           <div class="sev-dot warning"></div>
           <div class="finding-info">
             <div class="finding-rule">ebs_encryption_enabled</div>
-            <div class="finding-resource">vol-078583d1933c85fb7</div>
-            <div class="finding-detail">EBS volume unencrypted (state: in-use, instance: i-007be77cb9c0640e0) · Auditor (Primary)</div>
+            <div class="finding-resource">vol-07b2265cb111943db</div>
+            <div class="finding-detail">EBS volume unencrypted (state: available, instance: not attached) · Auditor (Primary)</div>
           </div>
           <div class="finding-meta">
             <span class="region-tag">ap-south-1</span>
@@ -262,7 +251,7 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">💸 Cost Waste</span>
-        <span class="panel-count">$1.00/month</span>
+        <span class="panel-count">$2.00/month</span>
       </div>
       <div class="panel-body">
         <table class="cost-table">
@@ -277,6 +266,18 @@
           <td>$0.80</td>
         </tr>
         <tr>
+          <td>vol-07b2265cb111943db</td>
+          <td style="color:var(--text-dim)">Unattached EBS Volume</td>
+          <td><span class="region-tag">ap-south-1</span></td>
+          <td>$0.80</td>
+        </tr>
+        <tr>
+          <td>vol-0e9e34a6c871635cb</td>
+          <td style="color:var(--text-dim)">Unattached EBS Volume</td>
+          <td><span class="region-tag">ap-south-1</span></td>
+          <td>$0.20</td>
+        </tr>
+        <tr>
           <td>vol-0c841d24865960886</td>
           <td style="color:var(--text-dim)">Unattached EBS Volume</td>
           <td><span class="region-tag">ap-south-1</span></td>
@@ -285,11 +286,11 @@
           <tfoot>
             <tr>
               <td colspan="3"><strong>Total Monthly Waste</strong></td>
-              <td><strong>$1.00</strong></td>
+              <td><strong>$2.00</strong></td>
             </tr>
             <tr>
               <td colspan="3" style="color:var(--muted);font-size:11px">Annual projection</td>
-              <td style="color:var(--amber);font-size:12px">$12.00/yr</td>
+              <td style="color:var(--amber);font-size:12px">$24.00/yr</td>
             </tr>
           </tfoot>
         </table>
@@ -299,7 +300,7 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">Golden Rules Coverage</span>
-        <span class="panel-count">4 / 8 passing</span>
+        <span class="panel-count">6 / 8 passing</span>
       </div>
       <div class="rule-grid">
         <div class="rule-item">
@@ -308,9 +309,9 @@
           <div class="rule-count" style="color:var(--red)">3</div>
         </div>
         <div class="rule-item">
-          <div class="rule-status warn">!</div>
+          <div class="rule-status pass">✓</div>
           <div class="rule-name">Required VPC tags</div>
-          <div class="rule-count" style="color:var(--amber)">1</div>
+          <div class="rule-count" style="color:var(--green)">0</div>
         </div>
         <div class="rule-item">
           <div class="rule-status pass">✓</div>
@@ -318,9 +319,9 @@
           <div class="rule-count" style="color:var(--green)">0</div>
         </div>
         <div class="rule-item">
-          <div class="rule-status warn">!</div>
+          <div class="rule-status pass">✓</div>
           <div class="rule-name">No orphaned EIPs</div>
-          <div class="rule-count" style="color:var(--amber)">1</div>
+          <div class="rule-count" style="color:var(--green)">0</div>
         </div>
         <div class="rule-item">
           <div class="rule-status pass">✓</div>
@@ -335,7 +336,7 @@
         <div class="rule-item">
           <div class="rule-status warn">!</div>
           <div class="rule-name">EBS encryption</div>
-          <div class="rule-count" style="color:var(--amber)">3</div>
+          <div class="rule-count" style="color:var(--amber)">4</div>
         </div>
         <div class="rule-item">
           <div class="rule-status pass">✓</div>
@@ -361,7 +362,7 @@
           <div class="bar-track">
             <div class="bar-fill" style="width:100%"></div>
           </div>
-          <div class="account-tally">9 issues</div>
+          <div class="account-tally">10 issues</div>
         </div>
         <div class="account-row">
           <div>
@@ -369,7 +370,7 @@
             <div class="account-id">278119224464</div>
           </div>
           <div class="bar-track">
-            <div class="bar-fill" style="width:11%"></div>
+            <div class="bar-fill" style="width:10%"></div>
           </div>
           <div class="account-tally">1 issues</div>
         </div>
@@ -381,11 +382,11 @@
               <div style="font-size:11px;color:var(--muted);margin-top:4px">Critical</div>
             </div>
             <div style="flex:1;background:rgba(255,184,48,0.08);border:1px solid rgba(255,184,48,0.2);border-radius:8px;padding:14px;text-align:center">
-              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--amber)">5</div>
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--amber)">4</div>
               <div style="font-size:11px;color:var(--muted);margin-top:4px">Warning</div>
             </div>
             <div style="flex:1;background:rgba(59,139,255,0.08);border:1px solid rgba(59,139,255,0.2);border-radius:8px;padding:14px;text-align:center">
-              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--blue)">2</div>
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--blue)">4</div>
               <div style="font-size:11px;color:var(--muted);margin-top:4px">Waste</div>
             </div>
           </div>
