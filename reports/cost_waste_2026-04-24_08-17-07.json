@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "generated_at": "2026-04-24_08-17-07",
+    "total_findings": 4,
+    "total_monthly_usd": 2.0,
+    "total_annual_usd": 24.0
+  },
+  "findings": [
+    {
+      "severity": "COST_WASTE",
+      "rule": "unattached_ebs_volume",
+      "resource_id": "vol-0ee9fd228fb56bc12",
+      "region": "ap-south-1",
+      "detail": "EBS volume 'observability-cluster-dynamic-pvc-38b135cb-b722-422f-af9b-3329957be033' (gp2, 8GB) unattached for 12 days \u2014 not mounted to any instance",
+      "monthly_cost_usd": 0.8,
+      "annual_cost_usd": 9.6,
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "COST_WASTE",
+      "rule": "unattached_ebs_volume",
+      "resource_id": "vol-07b2265cb111943db",
+      "region": "ap-south-1",
+      "detail": "EBS volume 'observability-cluster-dynamic-pvc-aeca3f6f-abb9-493d-811f-ad6d78c46a25' (gp2, 8GB) unattached for 12 days \u2014 not mounted to any instance",
+      "monthly_cost_usd": 0.8,
+      "annual_cost_usd": 9.6,
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "COST_WASTE",
+      "rule": "unattached_ebs_volume",
+      "resource_id": "vol-0e9e34a6c871635cb",
+      "region": "ap-south-1",
+      "detail": "EBS volume 'observability-cluster-dynamic-pvc-98b76d9c-c14c-4c09-8ca6-9917e72f3e23' (gp2, 2GB) unattached for 12 days \u2014 not mounted to any instance",
+      "monthly_cost_usd": 0.2,
+      "annual_cost_usd": 2.4,
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "COST_WASTE",
+      "rule": "unattached_ebs_volume",
+      "resource_id": "vol-0c841d24865960886",
+      "region": "ap-south-1",
+      "detail": "EBS volume 'observability-cluster-dynamic-pvc-9542b8de-65b2-4078-9bcd-201c6ba87d66' (gp2, 2GB) unattached for 12 days \u2014 not mounted to any instance",
+      "monthly_cost_usd": 0.2,
+      "annual_cost_usd": 2.4,
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    }
+  ]
+}
