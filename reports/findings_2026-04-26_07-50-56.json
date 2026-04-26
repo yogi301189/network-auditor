@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "generated_at": "2026-04-26_07-50-56",
+    "total_findings": 7,
+    "critical_count": 3,
+    "warning_count": 4
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-07fcd5d72b2e70832",
+      "region": "ap-south-1",
+      "detail": "SG 'all tcp' allows IPv4 0.0.0.0/0 on port 22, port 3389",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-07fcd5d72b2e70832",
+      "region": "ap-south-1",
+      "detail": "SG 'all tcp' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "CRITICAL",
+      "rule": "no_open_ssh_rdp",
+      "resource_id": "sg-06b9d37f0474f1637",
+      "region": "ap-south-1",
+      "detail": "SG 'basic ssh' allows IPv4 0.0.0.0/0 on port 22",
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "ebs_encryption_enabled",
+      "resource_id": "vol-0e9e34a6c871635cb",
+      "region": "ap-south-1",
+      "detail": "EBS volume unencrypted (state: available, instance: not attached)",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "ebs_encryption_enabled",
+      "resource_id": "vol-0ee9fd228fb56bc12",
+      "region": "ap-south-1",
+      "detail": "EBS volume unencrypted (state: available, instance: not attached)",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "ebs_encryption_enabled",
+      "resource_id": "vol-0c841d24865960886",
+      "region": "ap-south-1",
+      "detail": "EBS volume unencrypted (state: available, instance: not attached)",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    },
+    {
+      "severity": "WARNING",
+      "rule": "ebs_encryption_enabled",
+      "resource_id": "vol-07b2265cb111943db",
+      "region": "ap-south-1",
+      "detail": "EBS volume unencrypted (state: available, instance: not attached)",
+      "account_id": "222892837737",
+      "account_name": "Auditor (Primary)"
+    }
+  ]
+}
