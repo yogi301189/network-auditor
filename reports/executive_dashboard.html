@@ -112,7 +112,7 @@
       <h1>Security &amp; Cost Intelligence</h1>
     </div>
     <div class="header-meta">
-      <span class="scan-time">Scan: 2026-07-07 09:54 UTC</span>
+      <span class="scan-time">Scan: 2026-07-08 08:40 UTC</span>
       <span class="account-badge">222892837737 · 278119224464</span>
     </div>
   </header>
@@ -132,17 +132,17 @@
     </div>
     <div class="kpi-card amber">
       <div class="kpi-label">Warnings</div>
-      <div class="kpi-value">5</div>
+      <div class="kpi-value">1</div>
       <div class="kpi-sub">Review when possible</div>
     </div>
     <div class="kpi-card blue">
       <div class="kpi-label">Monthly Waste</div>
-      <div class="kpi-value">$2.50</div>
-      <div class="kpi-sub">$30.00/year projected</div>
+      <div class="kpi-value">$0.50</div>
+      <div class="kpi-sub">$6.00/year projected</div>
     </div>
     <div class="kpi-card amber">
       <div class="kpi-label">Idle Resources</div>
-      <div class="kpi-value">5</div>
+      <div class="kpi-value">1</div>
       <div class="kpi-sub">Not earning their cost</div>
     </div>
     <div class="kpi-card green">
@@ -197,53 +197,9 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">🟡 Warnings</span>
-        <span class="panel-count">5 findings</span>
+        <span class="panel-count">1 findings</span>
       </div>
       <div class="panel-body">
-        <div class="finding-row">
-          <div class="sev-dot warning"></div>
-          <div class="finding-info">
-            <div class="finding-rule">ebs_encryption_enabled</div>
-            <div class="finding-resource">vol-0e9e34a6c871635cb</div>
-            <div class="finding-detail">EBS volume unencrypted (state: available, instance: not attached) · Auditor (Primary)</div>
-          </div>
-          <div class="finding-meta">
-            <span class="region-tag">ap-south-1</span>
-          </div>
-        </div>
-        <div class="finding-row">
-          <div class="sev-dot warning"></div>
-          <div class="finding-info">
-            <div class="finding-rule">ebs_encryption_enabled</div>
-            <div class="finding-resource">vol-0ee9fd228fb56bc12</div>
-            <div class="finding-detail">EBS volume unencrypted (state: available, instance: not attached) · Auditor (Primary)</div>
-          </div>
-          <div class="finding-meta">
-            <span class="region-tag">ap-south-1</span>
-          </div>
-        </div>
-        <div class="finding-row">
-          <div class="sev-dot warning"></div>
-          <div class="finding-info">
-            <div class="finding-rule">ebs_encryption_enabled</div>
-            <div class="finding-resource">vol-0c841d24865960886</div>
-            <div class="finding-detail">EBS volume unencrypted (state: available, instance: not attached) · Auditor (Primary)</div>
-          </div>
-          <div class="finding-meta">
-            <span class="region-tag">ap-south-1</span>
-          </div>
-        </div>
-        <div class="finding-row">
-          <div class="sev-dot warning"></div>
-          <div class="finding-info">
-            <div class="finding-rule">ebs_encryption_enabled</div>
-            <div class="finding-resource">vol-07b2265cb111943db</div>
-            <div class="finding-detail">EBS volume unencrypted (state: available, instance: not attached) · Auditor (Primary)</div>
-          </div>
-          <div class="finding-meta">
-            <span class="region-tag">ap-south-1</span>
-          </div>
-        </div>
         <div class="finding-row">
           <div class="sev-dot warning"></div>
           <div class="finding-info">
@@ -262,7 +218,7 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">💸 Cost Waste</span>
-        <span class="panel-count">$2.50/month</span>
+        <span class="panel-count">$0.50/month</span>
       </div>
       <div class="panel-body">
         <table class="cost-table">
@@ -271,43 +227,19 @@
           </thead>
           <tbody>
         <tr>
-          <td>vol-0ee9fd228fb56bc12</td>
-          <td style="color:var(--text-dim)">Unattached EBS Volume</td>
-          <td><span class="region-tag">ap-south-1</span></td>
-          <td>$0.80</td>
-        </tr>
-        <tr>
-          <td>vol-07b2265cb111943db</td>
-          <td style="color:var(--text-dim)">Unattached EBS Volume</td>
-          <td><span class="region-tag">ap-south-1</span></td>
-          <td>$0.80</td>
-        </tr>
-        <tr>
           <td>vol-0fb60f336c9966b9d</td>
           <td style="color:var(--text-dim)">Unattached EBS Volume</td>
           <td><span class="region-tag">ap-south-1</span></td>
           <td>$0.50</td>
-        </tr>
-        <tr>
-          <td>vol-0e9e34a6c871635cb</td>
-          <td style="color:var(--text-dim)">Unattached EBS Volume</td>
-          <td><span class="region-tag">ap-south-1</span></td>
-          <td>$0.20</td>
-        </tr>
-        <tr>
-          <td>vol-0c841d24865960886</td>
-          <td style="color:var(--text-dim)">Unattached EBS Volume</td>
-          <td><span class="region-tag">ap-south-1</span></td>
-          <td>$0.20</td>
         </tr></tbody>
           <tfoot>
             <tr>
               <td colspan="3"><strong>Total Monthly Waste</strong></td>
-              <td><strong>$2.50</strong></td>
+              <td><strong>$0.50</strong></td>
             </tr>
             <tr>
               <td colspan="3" style="color:var(--muted);font-size:11px">Annual projection</td>
-              <td style="color:var(--amber);font-size:12px">$30.00/yr</td>
+              <td style="color:var(--amber);font-size:12px">$6.00/yr</td>
             </tr>
           </tfoot>
         </table>
@@ -353,7 +285,7 @@
         <div class="rule-item">
           <div class="rule-status warn">!</div>
           <div class="rule-name">EBS encryption</div>
-          <div class="rule-count" style="color:var(--amber)">5</div>
+          <div class="rule-count" style="color:var(--amber)">1</div>
         </div>
         <div class="rule-item">
           <div class="rule-status pass">✓</div>
@@ -377,9 +309,9 @@
             <div class="account-id">222892837737</div>
           </div>
           <div class="bar-track">
-            <div class="bar-fill" style="width:100%"></div>
+            <div class="bar-fill" style="width:66%"></div>
           </div>
-          <div class="account-tally">10 issues</div>
+          <div class="account-tally">2 issues</div>
         </div>
         <div class="account-row">
           <div>
@@ -387,7 +319,7 @@
             <div class="account-id">278119224464</div>
           </div>
           <div class="bar-track">
-            <div class="bar-fill" style="width:30%"></div>
+            <div class="bar-fill" style="width:100%"></div>
           </div>
           <div class="account-tally">3 issues</div>
         </div>
@@ -399,11 +331,11 @@
               <div style="font-size:11px;color:var(--muted);margin-top:4px">Critical</div>
             </div>
             <div style="flex:1;background:rgba(255,184,48,0.08);border:1px solid rgba(255,184,48,0.2);border-radius:8px;padding:14px;text-align:center">
-              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--amber)">5</div>
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--amber)">1</div>
               <div style="font-size:11px;color:var(--muted);margin-top:4px">Warning</div>
             </div>
             <div style="flex:1;background:rgba(59,139,255,0.08);border:1px solid rgba(59,139,255,0.2);border-radius:8px;padding:14px;text-align:center">
-              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--blue)">5</div>
+              <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--blue)">1</div>
               <div style="font-size:11px;color:var(--muted);margin-top:4px">Waste</div>
             </div>
           </div>
