@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "generated_at": "2026-07-20_09-28-11",
+    "total_findings": 1,
+    "total_monthly_usd": 0.5,
+    "total_annual_usd": 6.0
+  },
+  "findings": [
+    {
+      "severity": "COST_WASTE",
+      "rule": "unattached_ebs_volume",
+      "resource_id": "vol-0fb60f336c9966b9d",
+      "region": "ap-south-1",
+      "detail": "EBS volume 'app-migration-cluster-dynamic-pvc-b196d9e3-a9f2-41fd-b9d6-23a64b292397' (gp2, 5GB) unattached for 64 days \u2014 not mounted to any instance",
+      "monthly_cost_usd": 0.5,
+      "annual_cost_usd": 6.0,
+      "account_id": "278119224464",
+      "account_name": "Target (Secondary)"
+    }
+  ]
+}
